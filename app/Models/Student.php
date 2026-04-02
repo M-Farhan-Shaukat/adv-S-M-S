@@ -27,4 +27,9 @@ class Student extends Model
                 $q->whereIn('status', ['active', 'exam']);
             });
     }
+
+    public function vouchers()
+    {
+        return $this->hasMany(FeeVoucher::class);
+    }
 }
