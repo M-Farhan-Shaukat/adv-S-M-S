@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
 
             $table->decimal('salary', 10, 2)->default(0); // payroll ke liye
-
+            $table->integer('daily_required_minutes')->default(480);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

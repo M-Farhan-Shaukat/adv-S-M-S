@@ -4,18 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class TeacherAttendance extends Model
+class TeacherPayroll extends Model
 {
-    protected $table = 'teacher_attendance';
+    protected $table = 'teacher_payrolls';
     protected $fillable = [
         'teacher_id',
         'school_id',
         'session_id',
-        'date',
-        'check_in',
-        'check_out',
-        'working_minutes',
-        'status',
+        'month',
+        'year',
+        'total_minutes',
+        'gross_salary',
+        'deduction',
+        'net_salary',
+        'required_minutes',
+        'short_minutes',
     ];
     public function teacher()
     {
