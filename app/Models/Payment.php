@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-
+    use BelongsToSchool;
     protected $table = 'payments';
     protected $fillable = [
         'fee_voucher_id',

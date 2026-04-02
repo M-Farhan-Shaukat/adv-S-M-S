@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Section extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes,BelongsToSchool;
     protected $table = 'sections';
     protected $fillable = [
         'school_class_id',

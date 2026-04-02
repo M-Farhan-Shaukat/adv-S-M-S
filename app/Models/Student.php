@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 
 class Student extends Model
 {
+    use BelongsToSchool;
     protected $table = 'students';
     protected $fillable = [
         'name',
@@ -33,4 +35,5 @@ class Student extends Model
     {
         return $this->hasMany(FeeVoucher::class);
     }
+
 }

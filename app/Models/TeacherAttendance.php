@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 
 class TeacherAttendance extends Model
 {
+    use BelongsToSchool;
     protected $table = 'teacher_attendance';
     protected $fillable = [
         'teacher_id',

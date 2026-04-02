@@ -23,3 +23,13 @@ Route::get('/home', [RedirectController::class, 'home'])
 Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
+
+Route::prefix('{school}')
+    ->middleware(['identify.school'])
+    ->group(function () {
+
+        Route::get('/dashboard', function () {
+            return 'Dashboard';
+        });
+
+    });

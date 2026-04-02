@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 
 class SubjectAssignment extends Model
 {
+    use BelongsToSchool;
     protected $table = 'subject_assignments';
     protected $fillable = [
         'school_id',
