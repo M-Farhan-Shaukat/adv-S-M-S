@@ -11,6 +11,7 @@ class SchoolClass extends Model
     protected $table = 'school_classes';
     protected $fillable = [
         'session_id',
+        'school_id',
         'name',
         'code',
     ];

@@ -13,6 +13,7 @@ class Student extends Model
         'phone',
         'dob',
         'gender',
+        'school_id',
         'is_active',
     ];
     public function enrollments()

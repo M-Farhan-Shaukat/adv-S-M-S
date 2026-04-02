@@ -8,6 +8,7 @@ class ExpenseCategory extends Model
 {
     protected $table = 'expense_categories';
     protected $fillable = [
-        'name'
+        'name',        'school_id',
+
     ];
 }

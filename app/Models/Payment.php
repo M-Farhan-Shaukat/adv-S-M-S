@@ -14,6 +14,7 @@ class Payment extends Model
         'method',
         'transaction_id',
         'paid_at',
+        'school_id'
     ];
     public function voucher()
     {

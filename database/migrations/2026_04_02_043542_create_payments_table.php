@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('fee_voucher_id')->constrained()->cascadeOnDelete();
-
+            $table->foreignId('school_id')->constrained()->cascadeOnDelete();
             $table->decimal('amount', 10, 2);
 
             $table->string('method')->nullable(); // cash, bank, jazzcash

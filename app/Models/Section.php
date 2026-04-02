@@ -11,6 +11,7 @@ class Section extends Model
     protected $table = 'sections';
     protected $fillable = [
         'school_class_id',
+        'school_id',
         'name'
     ];
     public function class()

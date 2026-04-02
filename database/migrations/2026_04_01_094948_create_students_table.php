@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('dob')->nullable();
             $table->string('gender')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->foreignId('school_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
             $table->softDeletes();
         });

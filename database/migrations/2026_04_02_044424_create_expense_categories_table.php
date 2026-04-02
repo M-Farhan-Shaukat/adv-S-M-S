@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('expense_categories', function (Blueprint $table) {
             $table->id();
 
-            $table->string('name'); // Utilities, Salaries, Transport
+            $table->string('name');
+            $table->foreignId('school_id')->constrained()->cascadeOnDelete();
+// Utilities, Salaries, Transport
             $table->timestamps();
             $table->softDeletes();
         });
