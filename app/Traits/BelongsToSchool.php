@@ -10,8 +10,17 @@ trait BelongsToSchool
     {
         // auto assign school_id
         static::creating(function ($model) {
-            if (school() && empty($model->school_id)) {
-                $model->school_id = school()->id;
+
+            if (empty($model->school_id)) {
+
+                if (app()->bound('school')) {
+                    $model->school_id = app('school')->id;
+                }
+
+                // 🔥 fallback from relation
+                elseif (method_exists($model, 'schoolSession') && $model->schoolSession) {
+                    $model->school_id = $model->schoolSession->school_id;
+                }
             }
         });
 

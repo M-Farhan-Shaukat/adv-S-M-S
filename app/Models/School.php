@@ -19,7 +19,7 @@ class School extends Model
     ];
     public function sessions()
     {
-        return $this->hasMany(Session::class);
+        return $this->hasMany(SchoolSession::class);
     }
 
     public function classes()
@@ -28,13 +28,13 @@ class School extends Model
     }
     public function currentSession()
     {
-        return $this->hasOne(Session::class)
+        return $this->hasOne(SchoolSession::class)
             ->whereIn('status', ['active', 'exam']);
     }
 
     public function activeSession()
     {
-        return $this->hasOne(Session::class)
+        return $this->hasOne(SchoolSession::class)
             ->where('status', 'active');
     }
 }

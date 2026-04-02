@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RedirectController;
+use App\Http\Controllers\StudentController;
 
 // Public home redirect
 Route::get('/', function () {
@@ -27,6 +28,9 @@ Route::get('/email/verify', function () {
 Route::prefix('{school}')
     ->middleware(['identify.school'])
     ->group(function () {
+
+        Route::post('/students', [StudentController::class, 'store']);
+        Route::get('/students', [StudentController::class, 'index']);
 
         Route::get('/dashboard', function () {
             return 'Dashboard';

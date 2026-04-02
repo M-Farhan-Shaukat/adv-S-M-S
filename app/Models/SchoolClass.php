@@ -11,7 +11,7 @@ class SchoolClass extends Model
     use SoftDeletes,BelongsToSchool;
     protected $table = 'school_classes';
     protected $fillable = [
-        'session_id',
+        'school_session_id',
         'school_id',
         'name',
         'code',
@@ -23,7 +23,7 @@ class SchoolClass extends Model
 
     public function session()
     {
-        return $this->belongsTo(Session::class);
+        return $this->belongsTo(\App\Models\SchoolSession::class, 'school_session_id');
     }
 
     public function sections()

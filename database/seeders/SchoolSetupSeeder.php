@@ -4,39 +4,60 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\School;
-use App\Models\Session;
 
 class SchoolSetupSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create School
+        // 🔹 Create School
         $school = School::create([
             'name' => 'ABC School',
             'slug' => 'abc-school'
         ]);
+        app()->instance('school', $school); // 👈 important
+        // 🔹 Create Sessions
+        $sessions = [
+            [
+                'name' => '2024-2025',
+                'start_date' => now()->subYear(),
+                'end_date' => now(),
+                'status' => 'active',
+            ],
+            [
+                'name' => '2025-2026',
+                'start_date' => now(),
+                'end_date' => now()->addYear(),
+                'status' => 'active',
+            ]
+        ];
 
-        // Create Session
-        $session = $school->sessions()->create([
-            'name' => '2025-2026',
-            'start_date' => now(),
-            'end_date' => now()->addYear(),
-            'status' => 'active'
-        ]);
+        foreach ($sessions as $sessionData) {
 
-        // Classes List
-        $classes = ['Grade 1', 'Grade 2', 'Grade 3'];
+            $session = $school->sessions()->create($sessionData);
 
-        foreach ($classes as $className) {
-            $class = $session->classes()->create([
-                'name' => $className
-            ]);
+            // 🔹 Classes
+            $classes = [
+                'Grade 1',
+                'Grade 2',
+                'Grade 3',
+                'Grade 4',
+                'Grade 5'
+            ];
 
-            // Sections for each class
-            foreach (['A', 'B'] as $sectionName) {
-                $class->sections()->create([
-                    'name' => $sectionName
+            foreach ($classes as $className) {
+
+                $class = $session->classes()->create([
+                    'name' => $className,
+                    'school_id' => $school->id
                 ]);
+
+                // 🔹 Sections
+                foreach (['A', 'B', 'C'] as $sectionName) {
+                    $class->sections()->create([
+                        'name' => $sectionName,
+                        'school_id' => $school->id
+                    ]);
+                }
             }
         }
     }

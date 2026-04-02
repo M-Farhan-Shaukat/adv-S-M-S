@@ -12,7 +12,7 @@ class TeacherPayroll extends Model
     protected $fillable = [
         'teacher_id',
         'school_id',
-        'session_id',
+        'school_session_id',
         'month',
         'year',
         'total_minutes',
@@ -34,6 +34,6 @@ class TeacherPayroll extends Model
 
     public function session()
     {
-        return $this->belongsTo(Session::class);
+        return $this->belongsTo(SchoolSession::class);
     }
 }

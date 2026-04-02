@@ -12,7 +12,7 @@ class TeacherAttendance extends Model
     protected $fillable = [
         'teacher_id',
         'school_id',
-        'session_id',
+        'school_session_id',
         'date',
         'check_in',
         'check_out',
@@ -31,6 +31,6 @@ class TeacherAttendance extends Model
 
     public function session()
     {
-        return $this->belongsTo(Session::class);
+        return $this->belongsTo(SchoolSession::class);
     }
 }

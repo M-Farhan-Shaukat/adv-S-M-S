@@ -12,7 +12,7 @@ class FeeVoucher extends Model
     protected $fillable = [
         'student_id',
         'school_id',
-        'session_id',
+        'school_session_id',
         'month',
         'year',
         'total_amount',

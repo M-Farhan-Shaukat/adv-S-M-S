@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('school_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('session_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('school_session_id')->constrained()->cascadeOnDelete();
 
             $table->foreignId('class_id')->constrained('school_classes')->cascadeOnDelete();
             $table->foreignId('section_id')->constrained()->cascadeOnDelete();
@@ -25,12 +25,7 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-            $table->unique([
-                'session_id',
-                'class_id',
-                'section_id',
-                'subject_id'
-            ]);
+
         });
     }
 

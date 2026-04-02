@@ -13,7 +13,7 @@ class StudentEnrollment extends Model
     protected $fillable = [
         'student_id',
         'school_id',
-        'session_id',
+        'school_session_id',
         'class_id',
         'section_id',
         'is_promoted',
@@ -30,7 +30,7 @@ class StudentEnrollment extends Model
 
     public function session()
     {
-        return $this->belongsTo(Session::class);
+        return $this->belongsTo(SchoolSession::class);
     }
 
     public function class()

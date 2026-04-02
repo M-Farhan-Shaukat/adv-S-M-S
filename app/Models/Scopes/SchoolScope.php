@@ -13,8 +13,8 @@ class SchoolScope implements Scope
      */
     public function apply($builder, Model $model)
     {
-        if (school()) {
-            $builder->where('school_id', school()->id);
+        if (\school()) {
+            $builder->where('school_id', \school()->id);
         }
     }
 }

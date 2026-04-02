@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('teacher_id')->constrained()->cascadeOnDelete();
             $table->foreignId('school_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('session_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('school_session_id')->constrained()->cascadeOnDelete();
             $table->date('date');
             $table->time('check_in')->nullable();
             $table->time('check_out')->nullable();

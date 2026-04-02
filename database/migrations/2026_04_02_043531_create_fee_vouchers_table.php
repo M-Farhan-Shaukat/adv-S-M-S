@@ -16,7 +16,7 @@ return new class extends Migration
 
             $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->foreignId('school_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('session_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('school_session_id')->constrained()->cascadeOnDelete();
 
             $table->integer('month');
             $table->integer('year');

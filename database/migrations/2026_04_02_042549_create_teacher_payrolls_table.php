@@ -15,7 +15,7 @@ return new class extends Migration
                 $table->id();
                 $table->foreignId('teacher_id')->constrained()->cascadeOnDelete();
                 $table->foreignId('school_id')->constrained()->cascadeOnDelete();
-                $table->foreignId('session_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('school_session_id')->constrained()->cascadeOnDelete();
                 $table->integer('month');
                 $table->integer('year');
                 $table->integer('total_minutes')->default(0);

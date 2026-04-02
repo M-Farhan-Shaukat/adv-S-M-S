@@ -6,10 +6,10 @@ use App\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Session extends Model
+class SchoolSession extends Model
 {
     use SoftDeletes,BelongsToSchool;
-    protected $table = 'sessions';
+    protected $table = 'school_sessions';
     protected $fillable = [
         'school_id',
         'name',
@@ -24,6 +24,6 @@ class Session extends Model
 
     public function classes()
     {
-        return $this->hasMany(SchoolClass::class);
+        return $this->hasMany(\App\Models\SchoolClass::class, 'school_session_id');
     }
 }
