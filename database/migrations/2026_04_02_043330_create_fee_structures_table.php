@@ -16,12 +16,13 @@ return new class extends Migration
 
                 $table->foreignId('school_id')->constrained()->cascadeOnDelete();
                 $table->foreignId('school_class_id')->constrained('school_classes')->cascadeOnDelete();
-
                 $table->string('name'); // Tuition Fee
+                $table->foreignId('fee_type_id')->constrained()->cascadeOnDelete();
                 $table->decimal('amount', 10, 2);
 
                 $table->timestamps();
                 $table->softDeletes();
+                $table->unique(['school_class_id', 'fee_type_id', 'school_id']);
             });
     }
 

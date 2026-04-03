@@ -12,9 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\SetSchoolForTesting::class);
         $middleware->alias([
             'guest.custom' => \App\Http\Middleware\RedirectIfAuthenticatedCustom::class,
             'user.auth'    => \App\Http\Middleware\UserAuth::class,
+//            \App\Http\Middleware\SetSchoolForTesting::class,
             'admin.auth'   => \App\Http\Middleware\AdminAuth::class,
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);

@@ -28,7 +28,8 @@ class DatabaseSeeder extends Seeder
         RoleSeeder::class,
         PermissionSeeder::class,
         RolePermissionSeeder::class,
-            SchoolSetupSeeder::class
+            SchoolSetupSeeder::class,
+            FeeTypeSeeder::class
             ]);
 
         $this->command->warn('All done :)');

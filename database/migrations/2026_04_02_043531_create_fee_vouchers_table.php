@@ -14,11 +14,13 @@ return new class extends Migration
         Schema::create('fee_vouchers', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->foreignId('school_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('student_id')->constrained()->cascadeOnDelete();
             $table->foreignId('school_session_id')->constrained()->cascadeOnDelete();
-
-            $table->integer('month');
+            $table->foreignId('school_class_id')
+                ->nullable()
+                ->constrained('school_classes')
+                ->nullOnDelete();            $table->integer('month');
             $table->integer('year');
 
             $table->decimal('total_amount', 10, 2);
@@ -31,7 +33,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
             // 🔥 prevent duplicate voucher
-            $table->unique(['student_id', 'month', 'year']);
+            $table->unique(['student_id', 'school_session_id', 'month', 'year']);
         });
     }
 

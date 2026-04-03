@@ -9,11 +9,21 @@ class FeeStructure extends Model
 {
     use BelongsToSchool;
 
-    protected $table = 'fee_structure';
+    protected $table = 'fee_structures';
     protected $fillable = [
         'school_id',
         'school_class_id',
+        'fee_type_id',
         'name',
         'amount',
     ];
+    public function class()
+    {
+        return $this->belongsTo(SchoolClass::class, 'school_class_id');
+    }
+
+    public function type()
+    {
+        return $this->belongsTo(FeeType::class, 'fee_type_id');
+    }
 }
