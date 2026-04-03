@@ -26,7 +26,7 @@ Route::get('/email/verify', function () {
 })->middleware('auth')->name('verification.notice');
 
 Route::prefix('{school}')
-    ->middleware(['identify.school'])
+//    ->middleware(['identify.school'])
     ->group(function () {
 
         Route::post('/students', [StudentController::class, 'store']);

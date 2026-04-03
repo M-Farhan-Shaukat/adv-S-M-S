@@ -26,9 +26,7 @@ class Student extends Model
     public function currentEnrollment()
     {
         return $this->hasOne(StudentEnrollment::class)
-            ->whereHas('session', function ($q) {
-                $q->whereIn('status', ['active', 'exam']);
-            });
+            ->where('is_current', true);
     }
 
     public function vouchers()

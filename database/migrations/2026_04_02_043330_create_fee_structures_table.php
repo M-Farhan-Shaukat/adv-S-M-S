@@ -15,7 +15,7 @@ return new class extends Migration
                 $table->id();
 
                 $table->foreignId('school_id')->constrained()->cascadeOnDelete();
-                $table->foreignId('class_id')->constrained('school_classes')->cascadeOnDelete();
+                $table->foreignId('school_class_id')->constrained('school_classes')->cascadeOnDelete();
 
                 $table->string('name'); // Tuition Fee
                 $table->decimal('amount', 10, 2);

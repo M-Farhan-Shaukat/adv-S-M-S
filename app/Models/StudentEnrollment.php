@@ -14,9 +14,9 @@ class StudentEnrollment extends Model
         'student_id',
         'school_id',
         'school_session_id',
-        'class_id',
+        'school_class_id',
         'section_id',
-        'is_promoted',
+        'is_current',
     ];
     public function student()
     {
@@ -30,12 +30,11 @@ class StudentEnrollment extends Model
 
     public function session()
     {
-        return $this->belongsTo(SchoolSession::class);
-    }
+        return $this->belongsTo(SchoolClass::class, 'school_class_id');    }
 
     public function class()
     {
-        return $this->belongsTo(SchoolClass::class, 'class_id');
+        return $this->belongsTo(SchoolClass::class, 'school_class_id');
     }
 
     public function section()

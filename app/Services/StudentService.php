@@ -18,7 +18,7 @@ class StudentService
         StudentEnrollment::create([
             'student_id' => $student->id,
             'school_school_session_id' => $data['school_session_id'],
-            'school_class_id' => $data['class_id'],
+            'school_class_id' => $data['school_class_id'],
             'section_id' => $data['section_id'],
         ]);
 
