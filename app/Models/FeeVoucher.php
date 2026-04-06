@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class FeeVoucher extends Model
 {
     use BelongsToSchool;
-    protected $table = 'fees_voucher';
+    protected $table = 'fee_vouchers';
     protected $fillable = [
         'student_id',
         'school_id',

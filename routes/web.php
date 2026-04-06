@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RedirectController;
 use App\Http\Controllers\FeeStructureController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\FeeVoucherController;
 
 // Public home redirect
 Route::get('/', function () {
@@ -41,6 +42,8 @@ Route::prefix('{school}')
         Route::post('/fee-structures', [FeeStructureController::class, 'store']);
         Route::get('/fee-structures', [FeeStructureController::class, 'index']);
 
+//        fee-vouchers
+        Route::post('/fee-vouchers/generate', [FeeVoucherController::class, 'generate']);
         Route::get('/dashboard', function () {
             return 'Dashboard';
         });

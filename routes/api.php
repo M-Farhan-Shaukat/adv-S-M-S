@@ -2,6 +2,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\FeeStructureController;
+use App\Http\Controllers\FeeVoucherController;
+
 
 Route::get('/students', [StudentController::class, 'index']);
 Route::get('/students/{id}', [StudentController::class, 'show']);
@@ -12,3 +14,5 @@ Route::post('/students', [StudentController::class, 'store']);
 //Fee Structure
 Route::post('/fee-structures', [FeeStructureController::class, 'store']);
 Route::get('/fee-structures', [FeeStructureController::class, 'index']);
+
+Route::post('/fee-vouchers/generate', [FeeVoucherController::class, 'generate']);
