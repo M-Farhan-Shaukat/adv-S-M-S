@@ -11,11 +11,13 @@ class RedirectIfAuthenticatedCustom
     public function handle(Request $request, Closure $next)
     {
         if (Auth::check()) {
-            if (Auth::user()->role_is === 1) {
-                return redirect('/admin/dashboard');
+            $roles = Auth::user()->getRoleNames()->map(fn($r) => strtolower($r));
+
+            if ($roles->intersect(['admin', 'principal', 'manager', 'staff'])->isNotEmpty()) {
+                return redirect()->route('admin.dashboard');
             }
 
-            return redirect('/dashboard');
+            return redirect()->route('user.dashboard');
         }
 
         return $next($request);

@@ -48,7 +48,7 @@
                                 <h4 class="fw-bold mb-1 fs-5">{{ $user->name }}</h4>
                                 <div class="d-flex flex-wrap gap-2 mb-2 justify-content-center justify-content-sm-start">
                                     <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
-                                        <i class="bi bi-shield me-1"></i> {{ $user->role->name ?? 'No Role' }}
+                                        <i class="bi bi-shield me-1"></i> {{ $user->getRoleNames()->first() ?? 'No Role' }}
                                     </span>
                                     <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">
                                         <i class="bi bi-fingerprint me-1"></i> #{{ $user->id }}
@@ -195,7 +195,7 @@
                                                 </div>
                                                 <div>
                                                     <small class="text-muted text-uppercase">Role</small>
-                                                    <p class="fw-semibold mb-0 small">{{ $user->role->name ?? 'No Role' }}</p>
+                                                    <p class="fw-semibold mb-0 small">{{ $user->getRoleNames()->first() ?? 'No Role' }}</p>
                                                 </div>
                                             </div>
                                         </div>

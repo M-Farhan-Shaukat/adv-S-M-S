@@ -2,36 +2,29 @@
 
 namespace Database\Seeders;
 
-use App\Models\Attachment;
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Schema;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-//        if ($this->command->confirm('Do you wish to refresh migration before seeding, it will clear all old data ?')) {
-//            Schema::disableForeignKeyConstraints();
-//            $this->command->call('migrate:fresh');
-//            Schema::enableForeignKeyConstraints();
-//            $this->command->warn("Data cleared, starting from blank database.");
-//        }
         $this->call([
-            AdminUserSeeder::class,
-        RoleSeeder::class,
-        PermissionSeeder::class,
-        RolePermissionSeeder::class,
-            SchoolSetupSeeder::class,
-            FeeTypeSeeder::class
-            ]);
+            RoleSeeder::class,           // 1. Roles pehle
+            PermissionSeeder::class,     // 2. Permissions
+            RolePermissionSeeder::class, // 3. Role-Permission mapping
+            AdminUserSeeder::class,      // 4. Admin user (roles ke baad)
+            SchoolSetupSeeder::class,    // 5. School + principal + teacher
+            FeeTypeSeeder::class,        // 6. Fee types
+        ]);
 
-        $this->command->warn('All done :)');
+        $this->command->info('All seeders completed successfully!');
+        $this->command->table(
+            ['Role', 'Email', 'Password'],
+            [
+                ['admin',     'admin@gmail.com',           'Temp123!'],
+                ['principal', 'principal@abcschool.com',   'Temp123!'],
+                ['teacher',   'teacher@abcschool.com',     'Temp123!'],
+            ]
+        );
     }
 }

@@ -1,0 +1,13 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class MeetingParticipant extends Model
+{
+    protected $fillable = ['meeting_schedule_id', 'user_id', 'status'];
+
+    public function meeting() { return $this->belongsTo(MeetingSchedule::class); }
+    public function user() { return $this->belongsTo(User::class); }
+}

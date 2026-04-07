@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'school_id',
         'role_id',
         'is_active',
         'age',
@@ -55,73 +56,61 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function school()
+    {
+        return $this->belongsTo(School::class);
+    }
+
+    // Keep old role() for backward compat (Spatie Role model)
     public function role()
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(\Spatie\Permission\Models\Role::class, 'role_id');
     }
 
-    public function hasRole($roleName)
+    // School-specific relations
+    public function student()
     {
-        if (!$this->role) return false;
-        return $this->role->name === $roleName;
+        return $this->hasOne(Student::class);
     }
 
-    public function hasPermission($permission)
+    public function teacher()
     {
-        if ($this->hasRole('Admin')) return true;
-
-        if (!$this->role || !isset($this->role->permissions)) {
-            return false;
-        }
-
-        return in_array($permission, $this->role->permissions);
+        return $this->hasOne(Teacher::class);
     }
 
-
-    /**
-     * Get the user's pending documents.
-     */
-    public function pendingDocuments()
+    public function staffMember()
     {
-        return $this->documents()->pending();
+        return $this->hasOne(Staff::class);
     }
 
-    /**
-     * Get the user's approved documents.
-     */
-    public function approvedDocuments()
+    public function complaints()
     {
-        return $this->documents()->approved();
+        return $this->hasMany(Complaint::class);
     }
 
-    /**
-     * Get the user's completed applications.
-     */
-    public function completedApplications()
+    public function meetings()
     {
-        return $this->documents()->where('status', 'completed');
+        return $this->hasMany(MeetingSchedule::class, 'scheduled_by');
     }
 
-    /**
-     * Check if user has uploaded any documents.
-     */
-    public function hasUploadedDocuments()
+    // Helper: get primary role name (lowercase)
+    public function primaryRole(): string
     {
-        return $this->documents()->count() > 0;
+        return strtolower($this->getRoleNames()->first() ?? '');
     }
 
-    /**
-     * Get the user's current application status.
-     */
-    public function getApplicationStatusAttribute()
+    // Helper: check role case-insensitive
+    public function hasSchoolRole(string $role): bool
     {
-        $latestDocument = $this->documents()->latest()->first();
+        return $this->getRoleNames()->map(fn($r) => strtolower($r))->contains(strtolower($role));
+    }
 
-        if (!$latestDocument) {
-            return 'not_started';
-        }
-
-        return $latestDocument->status;
+    // Spatie-compatible permission check used in old views
+    public function hasPermission($permission): bool
+    {
+        $roles = $this->getRoleNames()->map(fn($r) => strtolower($r));
+        if ($roles->intersect(['admin', 'principal'])->isNotEmpty()) return true;
+        return $this->hasPermissionTo($permission);
     }
 
 

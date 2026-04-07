@@ -13,8 +13,10 @@ class AdminAuth
             return redirect()->route('admin.login');
         }
 
-        if (Auth::user()->role_id !== 1) {
-            abort(403);
+        $roles = Auth::user()->getRoleNames()->map(fn($r) => strtolower($r));
+
+        if (!$roles->intersect(['admin', 'principal', 'manager', 'staff'])->isNotEmpty()) {
+            abort(403, 'Admin access required.');
         }
 
         return $next($request);

@@ -14,16 +14,27 @@ class RedirectController extends Controller
             return redirect()->route('login');
         }
 
-        // Check roles
-        if ($user->hasRole('Admin') || $user->hasRole('Manager') || $user->hasRole('Staff')) {
+        $roles = $user->getRoleNames()->map(fn($r) => strtolower($r));
+
+        if ($roles->intersect(['admin', 'principal', 'manager', 'staff'])->isNotEmpty()) {
             return redirect()->route('admin.dashboard');
         }
 
-        if ($user->hasRole('User')) {
-            return redirect()->route('user.dashboard');
+        if ($roles->contains('parent')) {
+            $school = $user->school;
+            if ($school) return redirect()->route('parent.dashboard', $school->slug);
         }
 
-        // Default fallback
+        if ($roles->contains('student')) {
+            $school = $user->school;
+            if ($school) return redirect()->route('student.dashboard', $school->slug);
+        }
+
+        if ($roles->contains('teacher')) {
+            $school = $user->school;
+            if ($school) return redirect()->route('school.dashboard', $school->slug);
+        }
+
         return redirect()->route('user.dashboard');
     }
 }

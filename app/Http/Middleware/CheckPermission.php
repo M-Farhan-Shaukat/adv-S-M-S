@@ -4,14 +4,10 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class CheckPermission
 {
-    /**
-     * Handle an incoming request.
-     */
-    public function handle(Request $request, Closure $next, $permission): Response
+    public function handle(Request $request, Closure $next, $permission): mixed
     {
         $user = $request->user();
 
@@ -19,11 +15,16 @@ class CheckPermission
             return redirect()->route('login');
         }
 
-        // Admin has all permissions
-        if ($user->hasRole('Admin') || $user->hasPermission($permission)) {
+        // admin/principal has all permissions
+        $userRoles = $user->getRoleNames()->map(fn($r) => strtolower($r));
+        if ($userRoles->intersect(['admin', 'principal'])->isNotEmpty()) {
             return $next($request);
         }
 
-        abort(403, 'Unauthorized access. Required permission: ' . $permission);
+        if ($user->hasPermissionTo($permission)) {
+            return $next($request);
+        }
+
+        abort(403, 'Unauthorized. Required permission: ' . $permission);
     }
 }

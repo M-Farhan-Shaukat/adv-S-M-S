@@ -70,8 +70,8 @@ class FeeVoucherController extends Controller
         foreach ($fees as $fee) {
             FeeVoucherItem::create([
                 'fee_voucher_id' => $voucher->id,
-                'title' => $fee->name,
-                'amount' => $fee->amount,
+                'title'          => $fee->name,
+                'total_amount'   => $fee->amount,
             ]);
 
             $total += $fee->amount;

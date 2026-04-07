@@ -17,9 +17,19 @@ class FeeStructure extends Model
         'name',
         'amount',
     ];
+    public function schoolClass()
+    {
+        return $this->belongsTo(SchoolClass::class, 'school_class_id');
+    }
+
     public function class()
     {
         return $this->belongsTo(SchoolClass::class, 'school_class_id');
+    }
+
+    public function feeType()
+    {
+        return $this->belongsTo(FeeType::class, 'fee_type_id');
     }
 
     public function type()

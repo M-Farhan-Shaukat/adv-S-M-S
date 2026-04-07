@@ -14,11 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SetSchoolForTesting::class);
         $middleware->alias([
-            'guest.custom' => \App\Http\Middleware\RedirectIfAuthenticatedCustom::class,
-            'user.auth'    => \App\Http\Middleware\UserAuth::class,
-//            \App\Http\Middleware\SetSchoolForTesting::class,
-            'admin.auth'   => \App\Http\Middleware\AdminAuth::class,
-            'role' => \App\Http\Middleware\CheckRole::class,
+            'guest.custom'    => \App\Http\Middleware\RedirectIfAuthenticatedCustom::class,
+            'user.auth'       => \App\Http\Middleware\UserAuth::class,
+            'admin.auth'      => \App\Http\Middleware\AdminAuth::class,
+            'role'            => \App\Http\Middleware\CheckRole::class,
+            'permission'      => \App\Http\Middleware\CheckPermission::class,
+            'identify.school' => \App\Http\Middleware\IdentifySchool::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -13,10 +13,6 @@ class UserAuth
             return redirect()->route('login');
         }
 
-        if (Auth::user()->role_id !== 4) {
-            abort(403);
-        }
-
         return $next($request);
     }
 }

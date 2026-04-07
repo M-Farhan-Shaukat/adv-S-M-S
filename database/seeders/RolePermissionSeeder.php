@@ -11,18 +11,21 @@ class RolePermissionSeeder extends Seeder
     public function run(): void
     {
         // Roles
+        $admin     = Role::where('name', 'admin')->first();
         $principal = Role::where('name', 'principal')->first();
         $teacher   = Role::where('name', 'teacher')->first();
         $staff     = Role::where('name', 'staff')->first();
         $student   = Role::where('name', 'student')->first();
         $parent    = Role::where('name', 'parent')->first();
 
+        // ================= ADMIN =================
+        if ($admin) $admin->givePermissionTo(Permission::all());
+
         // ================= PRINCIPAL =================
-        // Full Access
-        $principal->givePermissionTo(Permission::all());
+        if ($principal) $principal->givePermissionTo(Permission::all());
 
         // ================= TEACHER =================
-        $teacher->givePermissionTo([
+        if ($teacher) $teacher->givePermissionTo([
             'view student',
             'mark student attendance',
             'view student attendance',
@@ -33,7 +36,7 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         // ================= STAFF =================
-        $staff->givePermissionTo([
+        if ($staff) $staff->givePermissionTo([
             'view student',
             'view teacher',
             'mark teacher attendance',
@@ -45,14 +48,14 @@ class RolePermissionSeeder extends Seeder
         ]);
 
         // ================= STUDENT =================
-        $student->givePermissionTo([
+        if ($student) $student->givePermissionTo([
             'view result',
             'request recheck',
             'view student attendance',
         ]);
 
         // ================= PARENT =================
-        $parent->givePermissionTo([
+        if ($parent) $parent->givePermissionTo([
             'view result',
             'view fee',
             'create complaint',
