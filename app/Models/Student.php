@@ -13,12 +13,13 @@ class Student extends Model
     protected $table = 'students';
     protected $fillable = [
         'name', 'email', 'phone', 'dob', 'gender',
-        'school_id', 'user_id', 'is_active',
+        'school_id', 'user_id', 'parent_user_id', 'is_active',
         'roll_number', 'address', 'guardian_name', 'guardian_phone', 'photo',
     ];
 
     public function school()          { return $this->belongsTo(School::class); }
     public function user()            { return $this->belongsTo(User::class); }
+    public function parentUser()      { return $this->belongsTo(User::class, 'parent_user_id'); }
     public function enrollments()     { return $this->hasMany(StudentEnrollment::class); }
     public function vouchers()        { return $this->hasMany(FeeVoucher::class); }
     public function marks()           { return $this->hasMany(StudentMark::class); }

@@ -67,10 +67,10 @@
                 </div>
                 <div class="col-12">
                     <div class="d-flex gap-4 bg-light p-2 rounded-3">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
-                            <label class="form-check-label small fw-semibold" for="isActive">Active</label>
-                        </div>
+{{--                        <div class="form-check form-switch">--}}
+{{--                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>--}}
+{{--                            <label class="form-check-label small fw-semibold" for="isActive">Active</label>--}}
+{{--                        </div>--}}
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="email_verified" id="emailVerified">
                             <label class="form-check-label small fw-semibold" for="emailVerified">Mark Email Verified</label>

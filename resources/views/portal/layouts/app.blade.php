@@ -12,7 +12,14 @@
         .portal-sidebar {
             background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
             min-height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
         }
+        .portal-sidebar::-webkit-scrollbar { width: 4px; }
+        .portal-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .portal-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
         .portal-nav-link {
             color: rgba(255,255,255,0.85);
             border-radius: 8px;
@@ -51,6 +58,10 @@
                 </div>
                 @yield('sidebar-links')
                 <div class="mt-4">
+                    <a href="{{ route('portal.change-password', app('school')->slug) }}"
+                       class="portal-nav-link mb-2">
+                        <i class="bi bi-key me-2"></i>Change Password
+                    </a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button class="btn btn-sm w-100 text-white" style="background:rgba(255,255,255,0.15)">

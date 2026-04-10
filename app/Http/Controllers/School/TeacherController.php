@@ -5,6 +5,7 @@ namespace App\Http\Controllers\School;
 use App\Http\Controllers\Controller;
 use App\Models\Teacher;
 use App\Models\User;
+use App\Services\CredentialService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -13,10 +14,11 @@ class TeacherController extends Controller
 {
     public function index(Request $request)
     {
-        $school = app('school');
+        $school   = app('school');
         $teachers = Teacher::with('user')
             ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"))
-            ->when($request->status, fn($q) => $q->where('is_active', $request->status === 'active'))
+            ->when($request->status !== null && $request->status !== '',
+                fn($q) => $q->where('is_active', $request->status === 'active'))
             ->paginate(15);
 
         return view('school.teachers.index', compact('teachers', 'school'));
@@ -24,7 +26,8 @@ class TeacherController extends Controller
 
     public function create()
     {
-        return view('school.teachers.create');
+        $school = app('school');
+        return view('school.teachers.create', compact('school'));
     }
 
     public function store(Request $request)
@@ -42,18 +45,24 @@ class TeacherController extends Controller
         $school = app('school');
 
         return DB::transaction(function () use ($data, $school) {
-            $user = null;
+            $user     = null;
+            $password = null;
+
             if (!empty($data['email'])) {
+                $password = CredentialService::generatePassword();
+
                 $user = User::create([
-                    'name'      => $data['name'],
-                    'email'     => $data['email'],
-                    'password'  => Hash::make('password123'),
-                    'school_id' => $school->id,
+                    'name'              => $data['name'],
+                    'email'             => $data['email'],
+                    'password'          => Hash::make($password),
+                    'school_id'         => $school->id,
+                    'email_verified_at' => now(),
+                    'is_active'         => true,
                 ]);
                 $user->assignRole('teacher');
             }
 
-            Teacher::create([
+            $teacher = Teacher::create([
                 'school_id'              => $school->id,
                 'user_id'                => $user?->id,
                 'name'                   => $data['name'],
@@ -65,17 +74,35 @@ class TeacherController extends Controller
                 'joining_date'           => $data['joining_date'] ?? null,
             ]);
 
-            return redirect()->route('school.teachers.index', $school->slug)
-                ->with('success', 'Teacher added successfully');
+            // Send credentials email
+            if ($user && $password) {
+                CredentialService::sendCredentials(
+                    email:      $user->email,
+                    name:       $user->name,
+                    password:   $password,
+                    role:       'Teacher',
+                    schoolName: $school->name,
+                    loginUrl:   url('/login'),
+                    portalNote: "After login, go to: " . url("/{$school->slug}/teacher-portal/dashboard")
+                );
+            }
+
+            $msg = 'Teacher added successfully.';
+            if ($user && $password) {
+                $msg .= ' Login credentials sent to ' . $user->email;
+            }
+
+            return redirect()->route('school.teachers.index', $school->slug)->with('success', $msg);
         });
     }
 
-    public function edit(Teacher $teacher)
+    public function edit(string $school, Teacher $teacher)
     {
-        return view('school.teachers.edit', compact('teacher'));
+        $school = app('school');
+        return view('school.teachers.edit', compact('teacher', 'school'));
     }
 
-    public function update(Request $request, Teacher $teacher)
+    public function update(Request $request, string $school, Teacher $teacher)
     {
         $data = $request->validate([
             'name'                   => 'required|string|max:100',
@@ -84,22 +111,23 @@ class TeacherController extends Controller
             'daily_required_minutes' => 'required|integer|min:60',
             'qualification'          => 'nullable|string',
             'joining_date'           => 'nullable|date',
-            'is_active'              => 'boolean',
         ]);
 
+        $data['is_active'] = $request->input('is_active', '1') == '1';
         $teacher->update($data);
 
         return redirect()->route('school.teachers.index', app('school')->slug)
-            ->with('success', 'Teacher updated successfully');
+            ->with('success', 'Teacher updated');
     }
 
-    public function destroy(Teacher $teacher)
+    public function destroy(string $school, Teacher $teacher)
     {
         $teacher->delete();
-        return redirect()->back()->with('success', 'Teacher deleted');
+        return redirect()->route('school.teachers.index', app('school')->slug)
+            ->with('success', 'Teacher deleted');
     }
 
-    public function toggleStatus(Teacher $teacher)
+    public function toggleStatus(string $school, Teacher $teacher)
     {
         $teacher->update(['is_active' => !$teacher->is_active]);
         return redirect()->back()->with('success', 'Status updated');

@@ -15,14 +15,21 @@
         body { background: #f0f4f8; }
         .sidebar {
             background: var(--sidebar-bg);
-            min-height: 100vh;
             width: 260px;
+            height: 100vh;
             position: fixed;
             top: 0; left: 0;
             z-index: 1040;
             overflow-y: auto;
+            overflow-x: hidden;
             transition: transform 0.3s ease;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
         }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 4px; }
+        .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
         .sidebar.collapsed { transform: translateX(-260px); }
         .sidebar .nav-link {
             color: rgba(255,255,255,0.85);
@@ -114,12 +121,24 @@
             </div>
         </div>
 
-        @php $school = app('school'); $slug = $school->slug; @endphp
+        @php $school = app('school'); $slug = $school->slug;
+            $userRoles   = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r));
+            $isPrincipal = $userRoles->contains('principal');
+        @endphp
 
         <ul class="nav flex-column">
-            <li><a href="{{ route('school.dashboard', $slug) }}" class="nav-link {{ request()->routeIs('school.dashboard') ? 'active' : '' }}">
+            <li><a href="{{ $isPrincipal ? route('admin.dashboard') : route('school.dashboard', $slug) }}"
+                   class="nav-link {{ request()->routeIs('admin.dashboard') || request()->routeIs('school.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a></li>
+
+            {{-- Principal: School Users link --}}
+            @if($isPrincipal)
+            <li><a href="{{ route('admin.school.users.index') }}"
+                   class="nav-link {{ request()->routeIs('admin.school.users.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> School Users
+            </a></li>
+            @endif
 
             @canany(['view student', 'create student'])
             <div class="sidebar-section">Academic</div>
@@ -231,7 +250,7 @@
         </ul>
 
         <div class="mt-4 pt-3 border-top border-white border-opacity-25">
-            <form method="POST" action="{{ route('logout') }}">
+            <form method="POST" action="{{ $isPrincipal ? route('admin.logout') : route('logout') }}">
                 @csrf
                 <button class="btn btn-sm w-100 text-white border-white border-opacity-25" style="background:rgba(255,255,255,0.1)">
                     <i class="bi bi-box-arrow-right me-1"></i> Logout

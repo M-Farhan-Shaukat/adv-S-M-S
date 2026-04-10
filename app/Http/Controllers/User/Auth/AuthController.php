@@ -47,7 +47,7 @@ class AuthController extends Controller
         }
 
         if ($roles->contains('teacher') && $user->school) {
-            return redirect()->route('school.dashboard', $user->school->slug);
+            return redirect()->route('teacher.dashboard', $user->school->slug);
         }
 
         if ($roles->contains('staff') && $user->school) {

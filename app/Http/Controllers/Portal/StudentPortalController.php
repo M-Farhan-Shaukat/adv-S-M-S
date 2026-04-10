@@ -13,16 +13,18 @@ use Illuminate\Http\Request;
 
 class StudentPortalController extends Controller
 {
-    private function getStudent()
+    private function getStudent(): Student
     {
-        return Student::where('user_id', auth()->id())->with('currentEnrollment')->firstOrFail();
+        return Student::where('user_id', auth()->id())
+            ->where('school_id', auth()->user()->school_id)
+            ->with('currentEnrollment')
+            ->firstOrFail();
     }
 
     public function dashboard()
     {
-        $school = app('school');
-        $student = $this->getStudent();
-
+        $school      = app('school');
+        $student     = $this->getStudent();
         $pendingFees = FeeVoucher::where('student_id', $student->id)->where('status', '!=', 'paid')->count();
         $recentMarks = StudentMark::with('examSchedule.subject')
             ->where('student_id', $student->id)->where('is_published', true)->latest()->take(5)->get();
@@ -32,10 +34,9 @@ class StudentPortalController extends Controller
 
     public function results()
     {
-        $school = app('school');
+        $school  = app('school');
         $student = $this->getStudent();
-
-        $marks = StudentMark::with('examSchedule.exam', 'examSchedule.subject', 'recheckRequest')
+        $marks   = StudentMark::with('examSchedule.exam', 'examSchedule.subject', 'recheckRequest')
             ->where('student_id', $student->id)
             ->where('is_published', true)
             ->get();
@@ -52,7 +53,6 @@ class StudentPortalController extends Controller
 
         $student = $this->getStudent();
 
-        // Check if already requested
         if (RecheckRequest::where('student_marks_id', $data['student_marks_id'])->exists()) {
             return redirect()->back()->with('error', 'Recheck already requested');
         }
@@ -69,8 +69,8 @@ class StudentPortalController extends Controller
 
     public function examSchedule()
     {
-        $school = app('school');
-        $student = $this->getStudent();
+        $school    = app('school');
+        $student   = $this->getStudent();
         $schedules = collect();
 
         if ($student->currentEnrollment) {
@@ -86,9 +86,8 @@ class StudentPortalController extends Controller
 
     public function attendance()
     {
-        $school = app('school');
-        $student = $this->getStudent();
-
+        $school      = app('school');
+        $student     = $this->getStudent();
         $attendances = StudentAttendance::where('student_id', $student->id)
             ->orderByDesc('date')->paginate(30);
 
@@ -103,9 +102,8 @@ class StudentPortalController extends Controller
 
     public function feeVouchers()
     {
-        $school = app('school');
-        $student = $this->getStudent();
-
+        $school   = app('school');
+        $student  = $this->getStudent();
         $vouchers = FeeVoucher::with('items', 'payments')
             ->where('student_id', $student->id)
             ->latest()->paginate(10);

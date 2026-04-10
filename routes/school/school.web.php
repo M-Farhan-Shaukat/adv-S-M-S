@@ -39,9 +39,10 @@ Route::prefix('{school}')
         Route::prefix('subjects')->name('subjects.')->group(function () {
             Route::get('/', [SubjectController::class, 'index'])->name('index');
             Route::post('/', [SubjectController::class, 'store'])->name('store');
-            Route::delete('/{subject}', [SubjectController::class, 'destroy'])->name('destroy');
+            // Static routes before dynamic
             Route::get('/assignments', [SubjectController::class, 'assignments'])->name('assignments');
             Route::post('/assign', [SubjectController::class, 'assign'])->name('assign');
+            Route::delete('/{subject}', [SubjectController::class, 'destroy'])->name('destroy');
         });
 
         // =================== STUDENTS ===================
@@ -91,12 +92,14 @@ Route::prefix('{school}')
             Route::get('/', [StaffController::class, 'index'])->name('index');
             Route::get('/create', [StaffController::class, 'create'])->name('create');
             Route::post('/', [StaffController::class, 'store'])->name('store');
-            Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
-            Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
-            Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
+            // Static routes BEFORE dynamic {staff} routes
             Route::get('/salaries', [StaffController::class, 'salaries'])->name('salaries');
             Route::post('/salaries/generate', [StaffController::class, 'generateSalary'])->name('salaries.generate');
             Route::post('/salaries/{salary}/paid', [StaffController::class, 'markSalaryPaid'])->name('salaries.paid');
+            // Dynamic routes last
+            Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
+            Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
+            Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
         });
 
         // =================== FEES ===================

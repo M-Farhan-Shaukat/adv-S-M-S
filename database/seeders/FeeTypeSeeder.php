@@ -13,14 +13,21 @@ class FeeTypeSeeder extends Seeder
             'Admission Fee',
             'Tuition Fee',
             'Exam Fee',
-            'Transport Fee'
+            'Transport Fee',
+            'Library Fee',
+            'Sports Fee',
         ];
 
-        foreach ($types as $type) {
-            FeeType::create([
-                'name' => $type,
-                'school_id'=>1
-            ]);
+        // Get all active schools
+        $schools = \App\Models\School::all();
+
+        foreach ($schools as $school) {
+            foreach ($types as $type) {
+                FeeType::firstOrCreate([
+                    'name'      => $type,
+                    'school_id' => $school->id,
+                ]);
+            }
         }
     }
 }

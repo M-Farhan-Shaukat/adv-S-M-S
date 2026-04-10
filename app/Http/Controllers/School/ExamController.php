@@ -17,13 +17,13 @@ class ExamController extends Controller
     public function index()
     {
         $school = app('school');
-        $exams = Exam::with('schoolClass', 'session')->latest()->paginate(15);
+        $exams  = Exam::with('schoolClass', 'session')->latest()->paginate(15);
         return view('school.exams.index', compact('exams', 'school'));
     }
 
     public function create()
     {
-        $school = app('school');
+        $school  = app('school');
         $classes = SchoolClass::all();
         return view('school.exams.create', compact('classes', 'school'));
     }
@@ -39,24 +39,30 @@ class ExamController extends Controller
             'description'     => 'nullable|string',
         ]);
 
-        $school = app('school');
-        $data['school_id'] = $school->id;
-        $data['school_session_id'] = $school->activeSession->id;
+        $school  = app('school');
+        $session = $school->activeSession ?? $school->currentSession;
 
+        if (!$session) {
+            return redirect()->back()->with('error', 'No active session found.');
+        }
+
+        $data['school_id']         = $school->id;
+        $data['school_session_id'] = $session->id;
         Exam::create($data);
 
         return redirect()->route('school.exams.index', $school->slug)->with('success', 'Exam created');
     }
 
-    public function schedules(Exam $exam)
+    public function schedules(string $school, Exam $exam)
     {
-        $subjects = Subject::all();
-        $sections = Section::whereHas('schoolClass', fn($q) => $q->where('id', $exam->school_class_id))->get();
+        $school    = app('school');
+        $subjects  = Subject::all();
+        $sections  = Section::whereHas('schoolClass', fn($q) => $q->where('id', $exam->school_class_id))->get();
         $schedules = $exam->schedules()->with('subject', 'section')->get();
-        return view('school.exams.schedules', compact('exam', 'subjects', 'sections', 'schedules'));
+        return view('school.exams.schedules', compact('exam', 'subjects', 'sections', 'schedules', 'school'));
     }
 
-    public function addSchedule(Request $request, Exam $exam)
+    public function addSchedule(Request $request, string $school, Exam $exam)
     {
         $data = $request->validate([
             'subject_id'    => 'required|exists:subjects,id',
@@ -68,48 +74,38 @@ class ExamController extends Controller
             'passing_marks' => 'required|integer|min:1',
             'room'          => 'nullable|string',
         ]);
-
         $data['exam_id']   = $exam->id;
         $data['school_id'] = app('school')->id;
-
         ExamSchedule::create($data);
-
         return redirect()->back()->with('success', 'Schedule added');
     }
 
-    public function enterMarks(ExamSchedule $schedule)
+    public function enterMarks(string $school, ExamSchedule $schedule)
     {
+        $school   = app('school');
         $students = Student::whereHas('currentEnrollment', fn($q) => $q->where('section_id', $schedule->section_id))->get();
-        $marks = StudentMark::where('exam_schedule_id', $schedule->id)->get()->keyBy('student_id');
-        return view('school.exams.marks', compact('schedule', 'students', 'marks'));
+        $marks    = StudentMark::where('exam_schedule_id', $schedule->id)->get()->keyBy('student_id');
+        return view('school.exams.marks', compact('schedule', 'students', 'marks', 'school'));
     }
 
-    public function saveMarks(Request $request, ExamSchedule $schedule)
+    public function saveMarks(Request $request, string $school, ExamSchedule $schedule)
     {
-        $request->validate([
-            'marks'          => 'required|array',
-            'marks.*.marks'  => 'nullable|numeric|min:0',
-            'marks.*.absent' => 'nullable|boolean',
-        ]);
-
         $school = app('school');
-
-        foreach ($request->marks as $studentId => $data) {
+        foreach ($request->input('marks', []) as $studentId => $data) {
             StudentMark::updateOrCreate(
                 ['exam_schedule_id' => $schedule->id, 'student_id' => $studentId],
                 [
                     'school_id'      => $school->id,
                     'obtained_marks' => $data['marks'] ?? 0,
-                    'is_absent'      => isset($data['absent']) ? true : false,
+                    'is_absent'      => !empty($data['absent']),
                     'remarks'        => $data['remarks'] ?? null,
                 ]
             );
         }
-
         return redirect()->back()->with('success', 'Marks saved');
     }
 
-    public function publishMarks(ExamSchedule $schedule)
+    public function publishMarks(string $school, ExamSchedule $schedule)
     {
         StudentMark::where('exam_schedule_id', $schedule->id)->update(['is_published' => true]);
         return redirect()->back()->with('success', 'Results published');

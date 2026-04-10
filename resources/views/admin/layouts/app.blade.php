@@ -10,14 +10,21 @@
         body { background: #f0f4f8; }
         .admin-sidebar {
             background: linear-gradient(180deg, #1e3a5f 0%, #2d6a9f 100%);
-            min-height: 100vh;
             width: 250px;
+            height: 100vh;
             position: fixed;
             top: 0; left: 0;
             z-index: 1040;
             overflow-y: auto;
+            overflow-x: hidden;
             transition: transform 0.3s ease;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
         }
+        .admin-sidebar::-webkit-scrollbar { width: 4px; }
+        .admin-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 4px; }
+        .admin-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
         .admin-sidebar.collapsed { transform: translateX(-250px); }
         .sidebar-nav-link {
             color: rgba(255,255,255,0.85);
@@ -115,8 +122,15 @@
         </div>
 
         {{-- Navigation --}}
+        @php
+            $authRoles   = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r));
+            $isAdmin     = $authRoles->contains('admin');
+            $isPrincipal = $authRoles->contains('principal') && !$isAdmin;
+            $mySchool    = auth()->user()->school;
+            $slug        = $mySchool?->slug ?? '';
+        @endphp
+
         <ul class="nav flex-column">
-            {{-- Dashboard --}}
             <li>
                 <a href="{{ route('admin.dashboard') }}"
                    class="sidebar-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
@@ -124,170 +138,67 @@
                 </a>
             </li>
 
-            {{-- Users --}}
+            @if($isAdmin)
+            {{-- ===== SUPER ADMIN ===== --}}
+            <div class="sidebar-section-label">System</div>
+            <li>
+                <a href="{{ route('admin.schools.index') }}"
+                   class="sidebar-nav-link {{ request()->routeIs('admin.schools.*') ? 'active' : '' }}">
+                    <i class="bi bi-building"></i> Manage Schools
+                </a>
+            </li>
             <li>
                 <a href="{{ route('admin.users') }}"
                    class="sidebar-nav-link {{ request()->routeIs('admin.users*') ? 'active' : '' }}">
-                    <i class="bi bi-people"></i> Manage Users
+                    <i class="bi bi-people"></i> All Users
                 </a>
             </li>
-
-            {{-- Schools Section --}}
             <div class="sidebar-section-label">Schools</div>
-            @foreach(\App\Models\School::where('is_active', true)->take(6)->get() as $sch)
+            @foreach(\App\Models\School::where('is_active', true)->get() as $sch)
             <li>
-                <a href="{{ url($sch->slug . '/dashboard') }}"
-                   class="sidebar-nav-link">
-                    <i class="bi bi-building"></i> {{ $sch->name }}
+                <a href="{{ url($sch->slug . '/dashboard') }}" class="sidebar-nav-link">
+                    <i class="bi bi-building-check"></i> {{ $sch->name }}
                 </a>
             </li>
             @endforeach
 
-            {{-- Academic --}}
+            @elseif($isPrincipal && $mySchool)
+            {{-- ===== PRINCIPAL ===== --}}
+            <div class="sidebar-section-label">{{ $mySchool->name }}</div>
+            <li>
+                <a href="{{ route('admin.school.users.index') }}"
+                   class="sidebar-nav-link {{ request()->routeIs('admin.school.users.*') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i> School Users
+                </a>
+            </li>
             <div class="sidebar-section-label">Academic</div>
-            @foreach(\App\Models\School::where('is_active', true)->take(1)->get() as $sch)
-            <li>
-                <a href="{{ route('school.students.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.students.*') ? 'active' : '' }}">
-                    <i class="bi bi-people-fill"></i> Students
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.teachers.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.teachers.*') ? 'active' : '' }}">
-                    <i class="bi bi-person-badge"></i> Teachers
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.classes.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.classes.*') ? 'active' : '' }}">
-                    <i class="bi bi-building"></i> Classes
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.subjects.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.subjects.*') ? 'active' : '' }}">
-                    <i class="bi bi-book"></i> Subjects
-                </a>
-            </li>
-
-            {{-- Attendance --}}
+            <li><a href="{{ route('school.students.index', $slug) }}" class="sidebar-nav-link {{ request()->routeIs('school.students.*') ? 'active' : '' }}"><i class="bi bi-people-fill"></i> Students</a></li>
+            <li><a href="{{ route('school.teachers.index', $slug) }}" class="sidebar-nav-link {{ request()->routeIs('school.teachers.*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i> Teachers</a></li>
+            <li><a href="{{ route('school.classes.index', $slug) }}" class="sidebar-nav-link {{ request()->routeIs('school.classes.*') ? 'active' : '' }}"><i class="bi bi-building"></i> Classes</a></li>
+            <li><a href="{{ route('school.subjects.index', $slug) }}" class="sidebar-nav-link {{ request()->routeIs('school.subjects.*') ? 'active' : '' }}"><i class="bi bi-book"></i> Subjects</a></li>
             <div class="sidebar-section-label">Attendance</div>
-            <li>
-                <a href="{{ route('school.attendance.teachers', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.attendance.teachers*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-check"></i> Teacher Attendance
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.attendance.students', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.attendance.students*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar2-check"></i> Student Attendance
-                </a>
-            </li>
-
-            {{-- Payroll --}}
+            <li><a href="{{ route('school.attendance.teachers', $slug) }}" class="sidebar-nav-link"><i class="bi bi-calendar-check"></i> Teacher Attendance</a></li>
+            <li><a href="{{ route('school.attendance.students', $slug) }}" class="sidebar-nav-link"><i class="bi bi-calendar2-check"></i> Student Attendance</a></li>
             <div class="sidebar-section-label">Payroll & Staff</div>
-            <li>
-                <a href="{{ route('school.payroll.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.payroll.*') ? 'active' : '' }}">
-                    <i class="bi bi-cash-stack"></i> Teacher Payroll
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.staff.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.staff.index') ? 'active' : '' }}">
-                    <i class="bi bi-person-lines-fill"></i> Staff
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.staff.salaries', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.staff.salaries*') ? 'active' : '' }}">
-                    <i class="bi bi-wallet2"></i> Staff Salaries
-                </a>
-            </li>
-
-            {{-- Fees --}}
+            <li><a href="{{ route('school.payroll.index', $slug) }}" class="sidebar-nav-link"><i class="bi bi-cash-stack"></i> Teacher Payroll</a></li>
+            <li><a href="{{ route('school.staff.index', $slug) }}" class="sidebar-nav-link"><i class="bi bi-person-lines-fill"></i> Staff</a></li>
+            <li><a href="{{ route('school.staff.salaries', $slug) }}" class="sidebar-nav-link"><i class="bi bi-wallet2"></i> Staff Salaries</a></li>
             <div class="sidebar-section-label">Fees</div>
-            <li>
-                <a href="{{ route('school.fees.vouchers', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.fees.vouchers*') ? 'active' : '' }}">
-                    <i class="bi bi-receipt"></i> Fee Vouchers
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.fees.payments', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.fees.payments*') ? 'active' : '' }}">
-                    <i class="bi bi-credit-card"></i> Payments
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.fees.structures', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.fees.structures*') ? 'active' : '' }}">
-                    <i class="bi bi-list-check"></i> Fee Structures
-                </a>
-            </li>
-
-            {{-- Exams --}}
+            <li><a href="{{ route('school.fees.vouchers', $slug) }}" class="sidebar-nav-link"><i class="bi bi-receipt"></i> Fee Vouchers</a></li>
+            <li><a href="{{ route('school.fees.payments', $slug) }}" class="sidebar-nav-link"><i class="bi bi-credit-card"></i> Payments</a></li>
+            <li><a href="{{ route('school.fees.structures', $slug) }}" class="sidebar-nav-link"><i class="bi bi-list-check"></i> Fee Structures</a></li>
             <div class="sidebar-section-label">Exams</div>
-            <li>
-                <a href="{{ route('school.exams.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.exams.*') ? 'active' : '' }}">
-                    <i class="bi bi-pencil-square"></i> Exams
-                </a>
-            </li>
-
-            {{-- Communication --}}
+            <li><a href="{{ route('school.exams.index', $slug) }}" class="sidebar-nav-link"><i class="bi bi-pencil-square"></i> Exams</a></li>
             <div class="sidebar-section-label">Communication</div>
-            <li>
-                <a href="{{ route('school.complaints.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.complaints.*') ? 'active' : '' }}">
-                    <i class="bi bi-chat-left-text"></i> Complaints
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.meetings.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.meetings.*') ? 'active' : '' }}">
-                    <i class="bi bi-calendar-event"></i> Meetings
-                </a>
-            </li>
-
-            {{-- Inventory --}}
-            <div class="sidebar-section-label">Inventory</div>
-            <li>
-                <a href="{{ route('school.inventory.index', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.inventory.*') ? 'active' : '' }}">
-                    <i class="bi bi-box-seam"></i> Inventory
-                </a>
-            </li>
-
-            {{-- Reports --}}
-            <div class="sidebar-section-label">Reports</div>
-            <li>
-                <a href="{{ route('school.reports.income', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.reports.income') ? 'active' : '' }}">
-                    <i class="bi bi-graph-up-arrow"></i> Income
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.reports.expense', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.reports.expense') ? 'active' : '' }}">
-                    <i class="bi bi-graph-down-arrow"></i> Expenses
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.reports.income-vs-expense', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.reports.income-vs-expense') ? 'active' : '' }}">
-                    <i class="bi bi-bar-chart-line"></i> P&L Report
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('school.reports.payroll', $sch->slug) }}"
-                   class="sidebar-nav-link {{ request()->routeIs('school.reports.payroll') ? 'active' : '' }}">
-                    <i class="bi bi-file-earmark-bar-graph"></i> Payroll Report
-                </a>
-            </li>
-            @endforeach
+            <li><a href="{{ route('school.complaints.index', $slug) }}" class="sidebar-nav-link"><i class="bi bi-chat-left-text"></i> Complaints</a></li>
+            <li><a href="{{ route('school.meetings.index', $slug) }}" class="sidebar-nav-link"><i class="bi bi-calendar-event"></i> Meetings</a></li>
+            <div class="sidebar-section-label">Inventory & Reports</div>
+            <li><a href="{{ route('school.inventory.index', $slug) }}" class="sidebar-nav-link"><i class="bi bi-box-seam"></i> Inventory</a></li>
+            <li><a href="{{ route('school.reports.income', $slug) }}" class="sidebar-nav-link"><i class="bi bi-graph-up-arrow"></i> Income</a></li>
+            <li><a href="{{ route('school.reports.expense', $slug) }}" class="sidebar-nav-link"><i class="bi bi-graph-down-arrow"></i> Expenses</a></li>
+            <li><a href="{{ route('school.reports.income-vs-expense', $slug) }}" class="sidebar-nav-link"><i class="bi bi-bar-chart-line"></i> P&L Report</a></li>
+            <li><a href="{{ route('school.reports.payroll', $slug) }}" class="sidebar-nav-link"><i class="bi bi-file-earmark-bar-graph"></i> Payroll Report</a></li>
+            @endif
         </ul>
 
         {{-- Logout --}}

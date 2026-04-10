@@ -17,9 +17,9 @@ class AttendanceController extends Controller
 
     public function teacherIndex(Request $request)
     {
-        $school = app('school');
-        $date = $request->date ?? today()->toDateString();
-        $teachers = Teacher::where('is_active', true)->get();
+        $school      = app('school');
+        $date        = $request->date ?? today()->toDateString();
+        $teachers    = Teacher::where('is_active', true)->get();
         $attendances = TeacherAttendance::where('date', $date)->get()->keyBy('teacher_id');
 
         return view('school.attendance.teacher', compact('teachers', 'attendances', 'date', 'school'));
@@ -28,8 +28,13 @@ class AttendanceController extends Controller
     public function teacherCheckIn(Request $request)
     {
         $request->validate(['teacher_id' => 'required|exists:teachers,id']);
-        $school = app('school');
-        $session = $school->activeSession;
+
+        $school  = app('school');
+        $session = $school->activeSession ?? $school->currentSession;
+
+        if (!$session) {
+            return redirect()->back()->with('error', 'No active session found.');
+        }
 
         $attendance = TeacherAttendance::firstOrCreate(
             ['teacher_id' => $request->teacher_id, 'date' => today()],
@@ -53,11 +58,19 @@ class AttendanceController extends Controller
 
         $attendance = TeacherAttendance::where('teacher_id', $request->teacher_id)
             ->where('date', today())
-            ->firstOrFail();
+            ->first();
 
-        $checkIn = Carbon::parse($attendance->check_in);
+        if (!$attendance) {
+            return redirect()->back()->with('error', 'No check-in found for today.');
+        }
+
+        if (!$attendance->check_in) {
+            return redirect()->back()->with('error', 'Teacher has not checked in yet.');
+        }
+
+        $checkIn  = Carbon::parse($attendance->check_in);
         $checkOut = now();
-        $minutes = $checkIn->diffInMinutes($checkOut);
+        $minutes  = $checkIn->diffInMinutes($checkOut);
 
         $attendance->update([
             'check_out'       => $checkOut->toTimeString(),
@@ -70,8 +83,13 @@ class AttendanceController extends Controller
     public function teacherMarkAbsent(Request $request)
     {
         $request->validate(['teacher_id' => 'required|exists:teachers,id']);
-        $school = app('school');
-        $session = $school->activeSession;
+
+        $school  = app('school');
+        $session = $school->activeSession ?? $school->currentSession;
+
+        if (!$session) {
+            return redirect()->back()->with('error', 'No active session found.');
+        }
 
         TeacherAttendance::updateOrCreate(
             ['teacher_id' => $request->teacher_id, 'date' => today()],
@@ -90,16 +108,15 @@ class AttendanceController extends Controller
 
     public function studentIndex(Request $request)
     {
-        $school = app('school');
-        $sections = Section::with('schoolClass')->get();
-        $date = $request->date ?? today()->toDateString();
-        $sectionId = $request->section_id;
-
-        $students = collect();
+        $school      = app('school');
+        $sections    = Section::with('schoolClass')->get();
+        $date        = $request->date ?? today()->toDateString();
+        $sectionId   = $request->section_id;
+        $students    = collect();
         $attendances = collect();
 
         if ($sectionId) {
-            $students = Student::whereHas('currentEnrollment', fn($q) => $q->where('section_id', $sectionId))->get();
+            $students    = Student::whereHas('currentEnrollment', fn($q) => $q->where('section_id', $sectionId))->get();
             $attendances = StudentAttendance::where('date', $date)
                 ->where('section_id', $sectionId)
                 ->get()->keyBy('student_id');
@@ -117,8 +134,12 @@ class AttendanceController extends Controller
             'attendance.*' => 'in:present,absent,leave,late',
         ]);
 
-        $school = app('school');
-        $session = $school->activeSession;
+        $school  = app('school');
+        $session = $school->activeSession ?? $school->currentSession;
+
+        if (!$session) {
+            return redirect()->back()->with('error', 'No active session found.');
+        }
 
         foreach ($request->attendance as $studentId => $status) {
             StudentAttendance::updateOrCreate(

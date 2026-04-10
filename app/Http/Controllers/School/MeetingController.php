@@ -12,17 +12,16 @@ class MeetingController extends Controller
 {
     public function index()
     {
-        $school = app('school');
+        $school   = app('school');
         $meetings = MeetingSchedule::with('organizer', 'participants.user')
             ->latest('meeting_date')->paginate(15);
-
         return view('school.meetings.index', compact('meetings', 'school'));
     }
 
     public function create()
     {
         $school = app('school');
-        $users = User::where('school_id', $school->id)->get();
+        $users  = User::where('school_id', $school->id)->get();
         return view('school.meetings.create', compact('users', 'school'));
     }
 
@@ -39,7 +38,7 @@ class MeetingController extends Controller
             'participants.*'   => 'exists:users,id',
         ]);
 
-        $school = app('school');
+        $school  = app('school');
         $meeting = MeetingSchedule::create([
             'school_id'        => $school->id,
             'scheduled_by'     => auth()->id(),
@@ -51,19 +50,17 @@ class MeetingController extends Controller
             'type'             => $data['type'],
         ]);
 
-        if (!empty($data['participants'])) {
-            foreach ($data['participants'] as $userId) {
-                MeetingParticipant::create([
-                    'meeting_schedule_id' => $meeting->id,
-                    'user_id'             => $userId,
-                ]);
-            }
+        foreach ($data['participants'] ?? [] as $userId) {
+            MeetingParticipant::create([
+                'meeting_schedule_id' => $meeting->id,
+                'user_id'             => $userId,
+            ]);
         }
 
         return redirect()->route('school.meetings.index', $school->slug)->with('success', 'Meeting scheduled');
     }
 
-    public function updateStatus(Request $request, MeetingSchedule $meeting)
+    public function updateStatus(Request $request, string $school, MeetingSchedule $meeting)
     {
         $request->validate(['status' => 'required|in:scheduled,completed,cancelled']);
         $meeting->update(['status' => $request->status]);

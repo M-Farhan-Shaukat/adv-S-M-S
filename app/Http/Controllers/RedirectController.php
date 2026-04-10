@@ -32,7 +32,7 @@ class RedirectController extends Controller
 
         if ($roles->contains('teacher')) {
             $school = $user->school;
-            if ($school) return redirect()->route('school.dashboard', $school->slug);
+            if ($school) return redirect()->route('teacher.dashboard', $school->slug);
         }
 
         return redirect()->route('user.dashboard');

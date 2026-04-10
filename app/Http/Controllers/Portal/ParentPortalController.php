@@ -14,21 +14,32 @@ use Illuminate\Http\Request;
 
 class ParentPortalController extends Controller
 {
+    /** Get children of logged-in parent (school-scoped) */
     private function getChildren()
     {
-        $school = app('school');
-        return Student::where('user_id', auth()->id())->get();
+        return Student::where('parent_user_id', auth()->id())
+            ->where('school_id', auth()->user()->school_id)
+            ->get();
+    }
+
+    /** Verify student belongs to this parent */
+    private function validateChild(int $studentId, $children): bool
+    {
+        return $children->pluck('id')->contains($studentId);
     }
 
     public function dashboard()
     {
-        $school = app('school');
+        $school   = app('school');
         $children = $this->getChildren();
 
         $pendingFees = FeeVoucher::whereIn('student_id', $children->pluck('id'))
-            ->where('status', '!=', 'paid')->count();
+            ->where('school_id', $school->id)
+            ->where('status', '!=', 'paid')
+            ->count();
 
-        $meetings = MeetingSchedule::where('type', 'parent_teacher')
+        $meetings = MeetingSchedule::where('school_id', $school->id)
+            ->where('type', 'parent_teacher')
             ->where('meeting_date', '>=', now())
             ->where('status', 'scheduled')
             ->take(3)->get();
@@ -38,46 +49,56 @@ class ParentPortalController extends Controller
 
     public function results(Request $request)
     {
-        $school = app('school');
-        $children = $this->getChildren();
+        $school    = app('school');
+        $children  = $this->getChildren();
         $studentId = $request->student_id ?? $children->first()?->id;
 
-        $marks = StudentMark::with('examSchedule.exam', 'examSchedule.subject')
-            ->where('student_id', $studentId)
-            ->where('is_published', true)
-            ->get();
+        $marks = collect();
+        if ($studentId && $this->validateChild($studentId, $children)) {
+            $marks = StudentMark::with('examSchedule.exam', 'examSchedule.subject')
+                ->where('student_id', $studentId)
+                ->where('school_id', $school->id)
+                ->where('is_published', true)
+                ->get();
+        }
 
         return view('portal.parent.results', compact('school', 'children', 'marks', 'studentId'));
     }
 
     public function feeVouchers(Request $request)
     {
-        $school = app('school');
-        $children = $this->getChildren();
+        $school    = app('school');
+        $children  = $this->getChildren();
         $studentId = $request->student_id ?? $children->first()?->id;
 
-        $vouchers = FeeVoucher::with('items', 'payments')
-            ->where('student_id', $studentId)
-            ->latest()->paginate(10);
+        $vouchers = collect();
+        if ($studentId && $this->validateChild($studentId, $children)) {
+            $vouchers = FeeVoucher::with('items', 'payments')
+                ->where('student_id', $studentId)
+                ->where('school_id', $school->id)
+                ->latest()->paginate(10);
+        }
 
         return view('portal.parent.fee_vouchers', compact('school', 'children', 'vouchers', 'studentId'));
     }
 
     public function examSchedule(Request $request)
     {
-        $school = app('school');
-        $children = $this->getChildren();
+        $school    = app('school');
+        $children  = $this->getChildren();
         $studentId = $request->student_id ?? $children->first()?->id;
-
-        $student = Student::with('currentEnrollment')->find($studentId);
         $schedules = collect();
 
-        if ($student?->currentEnrollment) {
-            $schedules = ExamSchedule::with('exam', 'subject')
-                ->where('section_id', $student->currentEnrollment->section_id)
-                ->where('exam_date', '>=', today())
-                ->orderBy('exam_date')
-                ->get();
+        if ($studentId && $this->validateChild($studentId, $children)) {
+            $student = Student::with('currentEnrollment')->find($studentId);
+            if ($student?->currentEnrollment) {
+                $schedules = ExamSchedule::with('exam', 'subject')
+                    ->where('school_id', $school->id)
+                    ->where('section_id', $student->currentEnrollment->section_id)
+                    ->where('exam_date', '>=', today())
+                    ->orderBy('exam_date')
+                    ->get();
+            }
         }
 
         return view('portal.parent.exam_schedule', compact('school', 'children', 'schedules', 'studentId'));
@@ -85,8 +106,11 @@ class ParentPortalController extends Controller
 
     public function complaints()
     {
-        $school = app('school');
-        $complaints = Complaint::where('user_id', auth()->id())->latest()->paginate(10);
+        $school     = app('school');
+        $complaints = Complaint::where('user_id', auth()->id())
+            ->where('school_id', $school->id)
+            ->latest()->paginate(10);
+
         return view('portal.parent.complaints', compact('school', 'complaints'));
     }
 
@@ -111,9 +135,12 @@ class ParentPortalController extends Controller
 
     public function meetings()
     {
-        $school = app('school');
-        $meetings = MeetingSchedule::whereHas('participants', fn($q) => $q->where('user_id', auth()->id()))
-            ->orWhere('type', 'parent_teacher')
+        $school   = app('school');
+        $meetings = MeetingSchedule::where('school_id', $school->id)
+            ->where(function ($q) {
+                $q->whereHas('participants', fn($p) => $p->where('user_id', auth()->id()))
+                  ->orWhere('type', 'parent_teacher');
+            })
             ->latest('meeting_date')->paginate(10);
 
         return view('portal.parent.meetings', compact('school', 'meetings'));
@@ -127,6 +154,12 @@ class ParentPortalController extends Controller
             'remark'     => 'required|string',
             'type'       => 'required|in:positive,negative,suggestion,query',
         ]);
+
+        // Verify student belongs to this parent
+        $children = $this->getChildren();
+        if (!$this->validateChild($data['student_id'], $children)) {
+            return redirect()->back()->with('error', 'Unauthorized action.');
+        }
 
         CourseRemark::create([
             'school_id'  => app('school')->id,

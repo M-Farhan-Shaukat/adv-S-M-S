@@ -21,13 +21,13 @@ class FeeManagementController extends Controller
     public function feeTypes()
     {
         $school = app('school');
-        $types = FeeType::paginate(20);
+        $types  = FeeType::paginate(20);
         return view('school.fees.types', compact('types', 'school'));
     }
 
     public function storeFeeType(Request $request)
     {
-        $data = $request->validate(['name' => 'required|string|max:100']);
+        $data              = $request->validate(['name' => 'required|string|max:100']);
         $data['school_id'] = app('school')->id;
         FeeType::create($data);
         return redirect()->back()->with('success', 'Fee type added');
@@ -37,10 +37,10 @@ class FeeManagementController extends Controller
 
     public function feeStructures()
     {
-        $school = app('school');
+        $school     = app('school');
         $structures = FeeStructure::with('feeType', 'schoolClass')->paginate(20);
-        $classes = SchoolClass::all();
-        $types   = FeeType::all();
+        $classes    = SchoolClass::all();
+        $types      = FeeType::all();
         return view('school.fees.structures', compact('structures', 'classes', 'types', 'school'));
     }
 
@@ -52,13 +52,12 @@ class FeeManagementController extends Controller
             'name'            => 'required|string',
             'amount'          => 'required|numeric|min:0',
         ]);
-
         $data['school_id'] = app('school')->id;
         FeeStructure::create($data);
         return redirect()->back()->with('success', 'Fee structure added');
     }
 
-    public function destroyFeeStructure(FeeStructure $feeStructure)
+    public function destroyFeeStructure(string $school, FeeStructure $feeStructure)
     {
         $feeStructure->delete();
         return redirect()->back()->with('success', 'Fee structure deleted');
@@ -68,11 +67,11 @@ class FeeManagementController extends Controller
 
     public function vouchers(Request $request)
     {
-        $school = app('school');
+        $school   = app('school');
         $vouchers = FeeVoucher::with('student', 'items')
             ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->when($request->month, fn($q) => $q->where('month', $request->month))
-            ->when($request->year, fn($q) => $q->where('year', $request->year))
+            ->when($request->month,  fn($q) => $q->where('month', $request->month))
+            ->when($request->year,   fn($q) => $q->where('year', $request->year))
             ->latest()->paginate(20);
 
         return view('school.fees.vouchers', compact('vouchers', 'school'));
@@ -87,15 +86,19 @@ class FeeManagementController extends Controller
             'due_date'        => 'required|date',
         ]);
 
-        $school = app('school');
-        $session = $school->activeSession;
+        $school  = app('school');
+        $session = $school->activeSession ?? $school->currentSession;
+
+        if (!$session) {
+            return redirect()->back()->with('error', 'No active session found.');
+        }
 
         $query = Student::with('currentEnrollment')->where('is_active', true);
         if ($request->school_class_id) {
             $query->whereHas('currentEnrollment', fn($q) => $q->where('school_class_id', $request->school_class_id));
         }
 
-        $students = $query->get();
+        $students  = $query->get();
         $generated = 0;
 
         DB::transaction(function () use ($students, $request, $school, $session, &$generated) {
@@ -104,9 +107,12 @@ class FeeManagementController extends Controller
 
                 $classId = $student->currentEnrollment->school_class_id;
 
-                if (FeeVoucher::where(['student_id' => $student->id, 'school_session_id' => $session->id, 'month' => $request->month, 'year' => $request->year])->exists()) {
-                    continue;
-                }
+                if (FeeVoucher::where([
+                    'student_id'        => $student->id,
+                    'school_session_id' => $session->id,
+                    'month'             => $request->month,
+                    'year'              => $request->year,
+                ])->exists()) continue;
 
                 $fees = FeeStructure::where('school_class_id', $classId)->get();
                 if ($fees->isEmpty()) continue;
@@ -142,12 +148,9 @@ class FeeManagementController extends Controller
 
     public function sendVouchers(Request $request)
     {
-        $request->validate([
-            'month' => 'required|integer',
-            'year'  => 'required|integer',
-        ]);
+        $request->validate(['month' => 'required|integer', 'year' => 'required|integer']);
 
-        $school = app('school');
+        $school   = app('school');
         $vouchers = FeeVoucher::with('student')
             ->where('month', $request->month)
             ->where('year', $request->year)
@@ -156,12 +159,12 @@ class FeeManagementController extends Controller
 
         $sent = 0;
         foreach ($vouchers as $voucher) {
-            if ($voucher->student->email) {
+            if ($voucher->student?->email) {
                 try {
                     Mail::to($voucher->student->email)->send(new \App\Mail\FeeVoucherMail($voucher));
                     $sent++;
                 } catch (\Exception $e) {
-                    // log and continue
+                    \Log::error('Fee voucher email failed: ' . $e->getMessage());
                 }
             }
         }
@@ -169,20 +172,21 @@ class FeeManagementController extends Controller
         return redirect()->back()->with('success', "Vouchers sent to {$sent} students");
     }
 
-    public function showVoucher(FeeVoucher $feeVoucher)
+    public function showVoucher(string $school, FeeVoucher $feeVoucher)
     {
+        $school = app('school');
         $feeVoucher->load('student', 'items', 'payments');
-        return view('school.fees.voucher_detail', compact('feeVoucher'));
+        return view('school.fees.voucher_detail', compact('feeVoucher', 'school'));
     }
 
     // =================== PAYMENTS ===================
 
     public function payments(Request $request)
     {
-        $school = app('school');
+        $school   = app('school');
         $payments = Payment::with('feeVoucher.student')
             ->when($request->from, fn($q) => $q->whereDate('paid_at', '>=', $request->from))
-            ->when($request->to, fn($q) => $q->whereDate('paid_at', '<=', $request->to))
+            ->when($request->to,   fn($q) => $q->whereDate('paid_at', '<=', $request->to))
             ->latest('paid_at')->paginate(20);
 
         return view('school.fees.payments', compact('payments', 'school'));
@@ -196,7 +200,7 @@ class FeeManagementController extends Controller
             'method'         => 'required|in:cash,bank,jazzcash,easypaisa',
         ]);
 
-        $voucher = FeeVoucher::findOrFail($request->fee_voucher_id);
+        $voucher   = FeeVoucher::findOrFail($request->fee_voucher_id);
         $remaining = $voucher->total_amount - $voucher->paid_amount;
 
         if ($request->amount > $remaining) {

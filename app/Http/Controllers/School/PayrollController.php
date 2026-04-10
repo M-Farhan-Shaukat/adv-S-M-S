@@ -12,14 +12,12 @@ class PayrollController extends Controller
 {
     public function index(Request $request)
     {
-        $school = app('school');
-        $month = $request->month ?? now()->month;
-        $year  = $request->year  ?? now()->year;
-
+        $school   = app('school');
+        $month    = $request->month ?? now()->month;
+        $year     = $request->year  ?? now()->year;
         $payrolls = TeacherPayroll::with('teacher')
             ->where('month', $month)->where('year', $year)
             ->paginate(20);
-
         $teachers = Teacher::where('is_active', true)->get();
 
         return view('school.payroll.index', compact('payrolls', 'teachers', 'month', 'year', 'school'));
@@ -32,18 +30,25 @@ class PayrollController extends Controller
             'year'  => 'required|integer|min:2020',
         ]);
 
-        $school = app('school');
-        $session = $school->activeSession;
-        $teachers = Teacher::where('is_active', true)->get();
+        $school  = app('school');
+        $session = $school->activeSession ?? $school->currentSession;
+
+        if (!$session) {
+            return redirect()->back()->with('error', 'No active session found. Please create a session first.');
+        }
+
+        $teachers  = Teacher::where('is_active', true)->get();
         $generated = 0;
 
         foreach ($teachers as $teacher) {
-            // Skip if already generated
-            if (TeacherPayroll::where(['teacher_id' => $teacher->id, 'month' => $request->month, 'year' => $request->year])->exists()) {
+            if (TeacherPayroll::where([
+                'teacher_id' => $teacher->id,
+                'month'      => $request->month,
+                'year'       => $request->year,
+            ])->exists()) {
                 continue;
             }
 
-            // Get attendance for this month
             $attendances = TeacherAttendance::where('teacher_id', $teacher->id)
                 ->whereMonth('date', $request->month)
                 ->whereYear('date', $request->year)
@@ -54,8 +59,7 @@ class PayrollController extends Controller
             $requiredMinutes = $workingDays * $teacher->daily_required_minutes;
             $shortMinutes    = max(0, $requiredMinutes - $totalMinutes);
 
-            // Per-minute salary
-            $monthlyMinutes = 26 * $teacher->daily_required_minutes; // 26 working days
+            $monthlyMinutes = 26 * $teacher->daily_required_minutes;
             $perMinute      = $monthlyMinutes > 0 ? $teacher->salary / $monthlyMinutes : 0;
 
             $grossSalary = $totalMinutes * $perMinute;
@@ -83,9 +87,10 @@ class PayrollController extends Controller
             ->with('success', "Payroll generated for {$generated} teachers");
     }
 
-    public function show(TeacherPayroll $payroll)
+    public function show(string $school, TeacherPayroll $payroll)
     {
+        $school = app('school');
         $payroll->load('teacher', 'school', 'session');
-        return view('school.payroll.show', compact('payroll'));
+        return view('school.payroll.show', compact('payroll', 'school'));
     }
 }
