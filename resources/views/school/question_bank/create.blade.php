@@ -20,16 +20,13 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Subject *</label>
-                            <select name="subject_id" class="form-select form-select-sm" required>
-                                <option value="">Select Subject</option>
-                                @foreach($subjects as $s)
-                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                @endforeach
+                            <select name="subject_id" id="subjectSelect" class="form-select form-select-sm" required>
+                                <option value="">Select Class first</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Class *</label>
-                            <select name="school_class_id" class="form-select form-select-sm" required>
+                            <select name="school_class_id" id="classSelectQB" class="form-select form-select-sm" required onchange="loadSubjects(this.value)">
                                 <option value="">Select Class</option>
                                 @foreach($classes as $c)
                                     <option value="{{ $c->id }}">{{ $c->name }}</option>
@@ -134,10 +131,29 @@
                             <i class="bi bi-robot me-2"></i>Generate Questions with AI
                         </button>
                         <small class="text-muted ms-3">
-                            <i class="bi bi-clock me-1"></i>May take 30-90 seconds per image
+                            <i class="bi bi-clock me-1"></i>Usually takes 5-15 seconds
                         </small>
                     </div>
                 </form>
+
+                {{-- Progress overlay --}}
+                <div id="progressOverlay" class="d-none mt-3">
+                    <div class="card border-0 bg-primary bg-opacity-10">
+                        <div class="card-body py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="spinner-border text-primary flex-shrink-0" role="status"></div>
+                                <div>
+                                    <div class="fw-semibold" id="progressText">Processing images...</div>
+                                    <div class="text-muted small" id="progressSub">Extracting text with OCR</div>
+                                </div>
+                            </div>
+                            <div class="progress mt-2" style="height:6px">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                     id="progressBar" style="width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -274,10 +290,59 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
     // Sync files to input before submit
     document.getElementById('imageInput').files = allFiles.files;
 
-    const btn = document.getElementById('submitBtn');
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Processing ${allFiles.files.length} image(s)... please wait`;
+    const btn     = document.getElementById('submitBtn');
+    const overlay = document.getElementById('progressOverlay');
+    const count   = allFiles.files.length;
+
     btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+    overlay.classList.remove('d-none');
+
+    // Animate progress steps
+    const steps = [
+        { text: `Reading ${count} image(s) with OCR...`, sub: 'Extracting text', pct: 20 },
+        { text: 'Text extracted successfully', sub: 'Sending to AI...', pct: 50 },
+        { text: 'AI generating questions...', sub: 'Almost done', pct: 80 },
+        { text: 'Finalizing questions...', sub: 'Please wait', pct: 95 },
+    ];
+
+    let step = 0;
+    const interval = setInterval(() => {
+        if (step < steps.length) {
+            document.getElementById('progressText').textContent = steps[step].text;
+            document.getElementById('progressSub').textContent  = steps[step].sub;
+            document.getElementById('progressBar').style.width  = steps[step].pct + '%';
+            step++;
+        }
+    }, 3000);
 });
+
+// Load subjects by class via AJAX
+function loadSubjects(classId) {
+    const subjectSelect = document.getElementById('subjectSelect');
+    subjectSelect.innerHTML = '<option value="">Loading...</option>';
+
+    if (!classId) {
+        subjectSelect.innerHTML = '<option value="">Select Class first</option>';
+        return;
+    }
+
+    fetch(`/{{ app('school')->slug }}/subjects/by-class?class_id=${classId}`)
+        .then(r => r.json())
+        .then(subjects => {
+            if (subjects.length === 0) {
+                subjectSelect.innerHTML = '<option value="">No subjects for this class</option>';
+            } else {
+                subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+                subjects.forEach(s => {
+                    subjectSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                });
+            }
+        })
+        .catch(() => {
+            subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
+        });
+}
 </script>
 @endpush
 @endsection

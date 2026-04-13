@@ -49,13 +49,24 @@ class SchoolSetupSeeder extends Seeder
             $classData[$className] = $class;
         }
 
-        // ===== SUBJECTS =====
-        $subjectNames = ['Mathematics', 'English', 'Science', 'Urdu', 'Islamiat'];
+        // ===== SUBJECTS (class-wise) =====
+        $subjectsByClass = [
+            'Grade 1' => ['Mathematics', 'English', 'Urdu', 'Islamiat', 'General Knowledge'],
+            'Grade 2' => ['Mathematics', 'English', 'Urdu', 'Islamiat', 'General Knowledge'],
+            'Grade 3' => ['Mathematics', 'English', 'Urdu', 'Islamiat', 'Science'],
+            'Grade 4' => ['Mathematics', 'English', 'Urdu', 'Islamiat', 'Science', 'Social Studies'],
+            'Grade 5' => ['Mathematics', 'English', 'Urdu', 'Islamiat', 'Science', 'Social Studies'],
+        ];
+
         $subjects = [];
-        foreach ($subjectNames as $sName) {
-            $subjects[$sName] = \App\Models\Subject::firstOrCreate(
-                ['name' => $sName, 'school_id' => $school->id]
-            );
+        foreach ($subjectsByClass as $className => $subjectNames) {
+            $class = $classData[$className] ?? null;
+            if (!$class) continue;
+            foreach ($subjectNames as $sName) {
+                $subjects[$className][$sName] = \App\Models\Subject::firstOrCreate(
+                    ['name' => $sName, 'school_id' => $school->id, 'school_class_id' => $class->id]
+                );
+            }
         }
 
         // ===== FEE TYPES =====
@@ -241,26 +252,16 @@ class SchoolSetupSeeder extends Seeder
         // ===== SUBJECT ASSIGNMENTS =====
         $grade1 = $classData['Grade 1'];
         $grade1SectionA = $grade1->sections()->where('name', 'A')->first();
-        if ($grade1SectionA && isset($teacherModels[0])) {
+        if ($grade1SectionA && isset($teacherModels[0]) && isset($subjects['Grade 1']['Mathematics'])) {
             \App\Models\SubjectAssignment::updateOrCreate(
                 [
                     'school_id'         => $school->id,
                     'school_session_id' => $session->id,
                     'school_class_id'   => $grade1->id,
                     'section_id'        => $grade1SectionA->id,
-                    'subject_id'        => $subjects['Mathematics']->id,
+                    'subject_id'        => $subjects['Grade 1']['Mathematics']->id,
                 ],
                 ['teacher_id' => $teacherModels[0]->id]
-            );
-            \App\Models\SubjectAssignment::updateOrCreate(
-                [
-                    'school_id'         => $school->id,
-                    'school_session_id' => $session->id,
-                    'school_class_id'   => $grade1->id,
-                    'section_id'        => $grade1SectionA->id,
-                    'subject_id'        => $subjects['English']->id,
-                ],
-                ['teacher_id' => $teacherModels[1]->id ?? $teacherModels[0]->id]
             );
         }
 

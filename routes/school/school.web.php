@@ -42,6 +42,7 @@ Route::prefix('{school}')
             // Static routes before dynamic
             Route::get('/assignments', [SubjectController::class, 'assignments'])->name('assignments');
             Route::post('/assign', [SubjectController::class, 'assign'])->name('assign');
+            Route::get('/by-class', [SubjectController::class, 'byClass'])->name('by-class'); // AJAX
             Route::delete('/{subject}', [SubjectController::class, 'destroy'])->name('destroy');
         });
 

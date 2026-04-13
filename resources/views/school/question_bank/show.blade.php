@@ -64,9 +64,9 @@
                 </div>
                 @endforeach
             </div>
-            @if($q->answer_hint)
+            <!-- @if($q->answer_hint)
             <small class="text-muted ms-4 d-block mt-1"><i class="bi bi-lightbulb me-1"></i>{{ $q->answer_hint }}</small>
-            @endif
+            @endif -->
         </div>
         @endforeach
     </div>
@@ -85,9 +85,9 @@
                 <span class="badge bg-success flex-shrink-0">Q{{ $i+1 }}</span>
                 <span class="fw-semibold">{{ $q->question_text }}</span>
             </div>
-            @if($q->answer_hint)
+            <!-- @if($q->answer_hint)
             <small class="text-muted ms-4 d-block"><i class="bi bi-lightbulb me-1"></i>{{ $q->answer_hint }}</small>
-            @endif
+            @endif -->
         </div>
         @endforeach
     </div>

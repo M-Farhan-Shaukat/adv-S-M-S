@@ -14,14 +14,33 @@ class SubjectController extends Controller
     public function index()
     {
         $school   = app('school');
-        $subjects = Subject::withCount('assignments')->paginate(20);
-        return view('school.subjects.index', compact('subjects', 'school'));
+        $classes  = SchoolClass::with('sections')->get();
+        $subjects = Subject::with('schoolClass')
+            ->withCount('assignments')
+            ->paginate(30);
+
+        return view('school.subjects.index', compact('subjects', 'classes', 'school'));
     }
 
     public function store(Request $request)
     {
-        $data              = $request->validate(['name' => 'required|string|max:100']);
+        $data = $request->validate([
+            'name'            => 'required|string|max:100',
+            'school_class_id' => 'required|exists:school_classes,id',
+        ]);
+
         $data['school_id'] = app('school')->id;
+
+        // Prevent duplicate subject in same class
+        $exists = Subject::where('school_id', $data['school_id'])
+            ->where('school_class_id', $data['school_class_id'])
+            ->where('name', $data['name'])
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()->with('error', 'This subject already exists for this class.');
+        }
+
         Subject::create($data);
         return redirect()->back()->with('success', 'Subject created');
     }
@@ -32,11 +51,23 @@ class SubjectController extends Controller
         return redirect()->back()->with('success', 'Subject deleted');
     }
 
+    // AJAX: get subjects by class
+    public function byClass(Request $request)
+    {
+        $subjects = Subject::where('school_id', app('school')->id)
+            ->where('school_class_id', $request->class_id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json($subjects);
+    }
+
+    // Assignments
     public function assignments()
     {
         $school      = app('school');
         $assignments = SubjectAssignment::with('subject', 'teacher', 'schoolClass', 'section')->paginate(20);
-        $subjects    = Subject::all();
+        $subjects    = Subject::with('schoolClass')->get();
         $teachers    = Teacher::where('is_active', true)->get();
         $classes     = SchoolClass::with('sections')->get();
         $session     = $school->activeSession ?? $school->currentSession;

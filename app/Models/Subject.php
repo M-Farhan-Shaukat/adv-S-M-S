@@ -11,9 +11,10 @@ class Subject extends Model
     use BelongsToSchool, SoftDeletes;
 
     protected $table = 'subjects';
-    protected $fillable = ['school_id', 'name'];
+    protected $fillable = ['school_id', 'school_class_id', 'name'];
 
     public function school()        { return $this->belongsTo(School::class); }
+    public function schoolClass()   { return $this->belongsTo(SchoolClass::class, 'school_class_id'); }
     public function assignments()   { return $this->hasMany(SubjectAssignment::class); }
     public function examSchedules() { return $this->hasMany(ExamSchedule::class); }
     public function remarks()       { return $this->hasMany(CourseRemark::class); }

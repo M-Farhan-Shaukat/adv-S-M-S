@@ -33,10 +33,9 @@ class QuestionBankController extends Controller
 
     public function create()
     {
-        $school   = app('school');
-        $subjects = Subject::all();
-        $classes  = SchoolClass::all();
-        return view('school.question_bank.create', compact('subjects', 'classes', 'school'));
+        $school  = app('school');
+        $classes = SchoolClass::all();
+        return view('school.question_bank.create', compact('classes', 'school'));
     }
 
     /**
@@ -59,8 +58,9 @@ class QuestionBankController extends Controller
         ]);
 
         // Increase execution time for AI processing
-        set_time_limit(600);
-        ini_set('max_execution_time', 600);
+        set_time_limit(300);
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '512M');
 
         $school = app('school');
         $ai     = new AIQuestionService();
@@ -235,16 +235,35 @@ class QuestionBankController extends Controller
 
     public function generateForm(Request $request)
     {
-        $school   = app('school');
-        $subjects = Subject::all();
-        $classes  = SchoolClass::all();
-        $banks    = QuestionBank::with('subject', 'schoolClass')
-            ->withCount(['questions as mcq_count'   => fn($q) => $q->where('type', 'mcq')->where('is_approved', true)])
-            ->withCount(['questions as short_count'  => fn($q) => $q->where('type', 'short')->where('is_approved', true)])
-            ->withCount(['questions as long_count'   => fn($q) => $q->where('type', 'long')->where('is_approved', true)])
-            ->get();
+        $school          = app('school');
+        $classes         = SchoolClass::all();
+        $selectedClassId = $request->class_id;
+        $selectedSubjectId = $request->subject_id;
+        $subjects        = collect();
+        $banks           = collect();
 
-        return view('school.question_bank.papers.generate', compact('school', 'subjects', 'classes', 'banks'));
+        if ($selectedClassId) {
+            // Load subjects for this class
+            $subjects = Subject::where('school_id', $school->id)
+                ->where('school_class_id', $selectedClassId)
+                ->orderBy('name')->get();
+
+            if ($selectedSubjectId) {
+                // Load banks for this class + subject
+                $banks = QuestionBank::with('subject', 'schoolClass')
+                    ->where('school_class_id', $selectedClassId)
+                    ->where('subject_id', $selectedSubjectId)
+                    ->withCount(['questions as mcq_count'   => fn($q) => $q->where('type', 'mcq')->where('is_approved', true)])
+                    ->withCount(['questions as short_count'  => fn($q) => $q->where('type', 'short')->where('is_approved', true)])
+                    ->withCount(['questions as long_count'   => fn($q) => $q->where('type', 'long')->where('is_approved', true)])
+                    ->get();
+            }
+        }
+
+        return view('school.question_bank.papers.generate', compact(
+            'school', 'classes', 'subjects', 'banks',
+            'selectedClassId', 'selectedSubjectId'
+        ));
     }
 
     /**
@@ -255,6 +274,7 @@ class QuestionBankController extends Controller
         $request->validate([
             'question_bank_ids'  => 'required|array|min:1',
             'question_bank_ids.*'=> 'exists:question_banks,id',
+            'class_id'           => 'nullable|exists:school_classes,id',
             'title'              => 'required|string|max:200',
             'language'           => 'required|in:english,urdu,arabic',
             'mcq_count'          => 'required|integer|min:0',
