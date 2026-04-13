@@ -154,7 +154,22 @@ Route::prefix('{school}')
             Route::post('/categories', [InventoryController::class, 'storeCategory'])->name('categories.store');
         });
 
-        // =================== REPORTS ===================
+        // =================== QUESTION BANK & PAPER GENERATION ===================
+        Route::prefix('question-bank')->name('question-bank.')->group(function () {
+            Route::get('/',                    [\App\Http\Controllers\School\QuestionBankController::class, 'index'])->name('index');
+            Route::get('/create',              [\App\Http\Controllers\School\QuestionBankController::class, 'create'])->name('create');
+            Route::post('/process-image',      [\App\Http\Controllers\School\QuestionBankController::class, 'processImage'])->name('process-image');
+            Route::get('/review',              [\App\Http\Controllers\School\QuestionBankController::class, 'review'])->name('review');
+            Route::post('/save-questions',     [\App\Http\Controllers\School\QuestionBankController::class, 'saveQuestions'])->name('save-questions');
+            Route::get('/{questionBank}',      [\App\Http\Controllers\School\QuestionBankController::class, 'show'])->name('show');
+            Route::delete('/{questionBank}',   [\App\Http\Controllers\School\QuestionBankController::class, 'destroy'])->name('destroy');
+            // Papers
+            Route::get('/papers/list',         [\App\Http\Controllers\School\QuestionBankController::class, 'paperIndex'])->name('papers');
+            Route::get('/papers/generate',     [\App\Http\Controllers\School\QuestionBankController::class, 'generateForm'])->name('generate');
+            Route::post('/papers/preview',     [\App\Http\Controllers\School\QuestionBankController::class, 'previewPaper'])->name('preview');
+            Route::post('/papers/save',        [\App\Http\Controllers\School\QuestionBankController::class, 'savePaper'])->name('save-paper');
+            Route::get('/papers/{paper}/print',[\App\Http\Controllers\School\QuestionBankController::class, 'printPaper'])->name('paper.print');
+        });
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/income', [ReportController::class, 'income'])->name('income');
             Route::get('/expense', [ReportController::class, 'expense'])->name('expense');

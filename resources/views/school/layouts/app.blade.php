@@ -235,6 +235,16 @@
             </a></li>
             @endcan
 
+            @can('create exam')
+            <div class="sidebar-section">AI Paper Generator</div>
+            <li><a href="{{ route('school.question-bank.index', $slug) }}" class="nav-link {{ request()->routeIs('school.question-bank.*') ? 'active' : '' }}">
+                <i class="bi bi-robot"></i> Question Banks
+            </a></li>
+            <li><a href="{{ route('school.question-bank.papers', $slug) }}" class="nav-link {{ request()->routeIs('school.question-bank.papers*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-text"></i> Generated Papers
+            </a></li>
+            @endcan
+
             @canany(['view income report', 'view expense report'])
             <div class="sidebar-section">Reports</div>
             <li><a href="{{ route('school.reports.income', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.income') ? 'active' : '' }}">

@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'ai' => [
+        'provider' => env('AI_PROVIDER', 'ollama'),
+    ],
+
+    'ollama' => [
+        'host'         => env('OLLAMA_HOST', 'http://localhost:11434'),
+        'model'        => env('OLLAMA_MODEL', 'llama3.2'),
+        'vision_model' => env('OLLAMA_VISION_MODEL', 'llava'),
+    ],
+
+    'gemini' => [
+        'key'   => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-1.5-flash'),
+    ],
+
 ];
