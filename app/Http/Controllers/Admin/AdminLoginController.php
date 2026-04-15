@@ -33,6 +33,18 @@ class AdminLoginController extends Controller
             return back()->withErrors(['email' => 'You do not have admin access.']);
         }
 
+        // Check user is active
+        if (!$user->is_active) {
+            Auth::logout();
+            return back()->withErrors(['email' => 'Your account is inactive. Please contact admin.']);
+        }
+
+        // Check school is active (skip for super admin)
+        if (!$roles->contains('admin') && $user->school && !$user->school->is_active) {
+            Auth::logout();
+            return back()->withErrors(['email' => 'Your school is inactive. Please contact admin.']);
+        }
+
         return redirect()->route('admin.dashboard');
     }
 

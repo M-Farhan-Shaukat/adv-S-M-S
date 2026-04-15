@@ -52,15 +52,36 @@ class UserController extends Controller
             ->paginate($perPage)
             ->appends($request->only(['per_page', 'search', 'role']));
 
-        $roles = $this->allowedRoles();
+        $roles  = $this->allowedRoles();
+        $layout = $this->resolveLayout();
 
-        return view('admin.users.index', compact('users', 'perPage', 'roles'));
+        return view('admin.users.index', compact('users', 'perPage', 'roles', 'layout'));
     }
 
+    /** Super admin: view users of a specific school */
+    public function bySchool(Request $request, \App\Models\School $school)
+    {
+        $perPage = is_numeric($request->per_page) ? (int) $request->per_page : 15;
+
+        $users = User::with('roles')
+            ->where('school_id', $school->id)
+            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%")
+                ->orWhere('email', 'like', "%{$request->search}%"))
+            ->when($request->role, fn($q) => $q->whereHas('roles', fn($r) => $r->where('name', $request->role)))
+            ->latest()
+            ->paginate($perPage)
+            ->appends($request->only(['per_page', 'search', 'role']));
+
+        $roles  = \Spatie\Permission\Models\Role::orderBy('name')->get();
+        $layout = $this->resolveLayout();
+
+        return view('admin.users.by_school', compact('users', 'school', 'perPage', 'roles', 'layout'));
+    }
     public function create()
     {
-        $roles = $this->allowedRoles();
-        return view('admin.users.create', compact('roles'));
+        $roles  = $this->allowedRoles();
+        $layout = $this->resolveLayout();
+        return view('admin.users.create', compact('roles', 'layout'));
     }
 
     public function store(Request $request)
@@ -110,12 +131,11 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        // Principal can only edit users of their school
         $this->authorizeAccess($user);
-
-        $roles   = $this->allowedRoles();
+        $roles    = $this->allowedRoles();
         $userRole = $user->getRoleNames()->first() ?? '';
-        return view('admin.users.edit', compact('user', 'roles', 'userRole'));
+        $layout   = $this->resolveLayout();
+        return view('admin.users.edit', compact('user', 'roles', 'userRole', 'layout'));
     }
 
     public function update(Request $request, User $user)
@@ -171,7 +191,8 @@ class UserController extends Controller
     {
         $this->authorizeAccess($user);
         $user->load('roles');
-        return view('admin.users.show', compact('user'));
+        $layout = $this->resolveLayout();
+        return view('admin.users.show', compact('user', 'layout'));
     }
 
     public function destroy(User $user)
@@ -195,6 +216,23 @@ class UserController extends Controller
         if (!$authRoles->contains('admin') && $user->school_id !== $authUser->school_id) {
             abort(403, 'You can only manage users of your own school.');
         }
+    }
+
+    /** Returns the correct layout based on logged-in role */
+    private function resolveLayout(): string
+    {
+        $authUser  = auth()->user();
+        $authRoles = $authUser->getRoleNames()->map(fn($r) => strtolower($r));
+
+        if ($authRoles->contains('principal') && !$authRoles->contains('admin')) {
+            // Ensure school is bound for the school layout
+            if ($authUser->school && !app()->bound('school')) {
+                app()->instance('school', $authUser->school);
+            }
+            return 'school.layouts.app';
+        }
+
+        return 'admin.layouts.app';
     }
 
     private function getLoginUrl(string $role): string

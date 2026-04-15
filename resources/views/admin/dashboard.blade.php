@@ -1,5 +1,5 @@
-@extends('admin.layouts.app')
-@section('title', 'Admin Dashboard')
+@extends('school.layouts.app')
+@section('title', 'Dashboard')
 
 @section('content')
 

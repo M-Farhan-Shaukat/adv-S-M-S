@@ -11,6 +11,7 @@ use App\Http\Controllers\School\PayrollController;
 use App\Http\Controllers\School\ReportController;
 use App\Http\Controllers\School\SchoolDashboardController;
 use App\Http\Controllers\School\SchoolStudentController;
+use App\Http\Controllers\School\SessionController;
 use App\Http\Controllers\School\StaffController;
 use App\Http\Controllers\School\SubjectController;
 use App\Http\Controllers\School\TeacherController;
@@ -23,6 +24,15 @@ Route::prefix('{school}')
 
         // Dashboard
         Route::get('/dashboard', [SchoolDashboardController::class, 'index'])->name('dashboard');
+
+        // =================== SESSIONS ===================
+        Route::prefix('sessions')->name('sessions.')->group(function () {
+            Route::get('/',               [SessionController::class, 'index'])->name('index');
+            Route::post('/',              [SessionController::class, 'store'])->name('store');
+            Route::get('/{session}/edit', [SessionController::class, 'edit'])->name('edit');
+            Route::put('/{session}',      [SessionController::class, 'update'])->name('update');
+            Route::delete('/{session}',   [SessionController::class, 'destroy'])->name('destroy');
+        });
 
         // =================== CLASSES & SECTIONS ===================
         Route::prefix('classes')->name('classes.')->group(function () {
@@ -43,6 +53,8 @@ Route::prefix('{school}')
             Route::get('/assignments', [SubjectController::class, 'assignments'])->name('assignments');
             Route::post('/assign', [SubjectController::class, 'assign'])->name('assign');
             Route::get('/by-class', [SubjectController::class, 'byClass'])->name('by-class'); // AJAX
+            Route::get('/{subject}/edit', [SubjectController::class, 'edit'])->name('edit');
+            Route::put('/{subject}', [SubjectController::class, 'update'])->name('update');
             Route::delete('/{subject}', [SubjectController::class, 'destroy'])->name('destroy');
         });
 

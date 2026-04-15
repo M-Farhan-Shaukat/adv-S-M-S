@@ -14,7 +14,6 @@ use App\Models\Teacher;
 use App\Models\Staff;
 use App\Models\TeacherAttendance;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
@@ -24,25 +23,28 @@ class AdminDashboardController extends Controller
         $user  = auth()->user();
         $roles = $user->getRoleNames()->map(fn($r) => strtolower($r));
 
-        // ===== PRINCIPAL: school-scoped dashboard =====
         if ($roles->contains('principal') && !$roles->contains('admin')) {
             return $this->principalDashboard($user);
         }
 
-        // ===== SUPER ADMIN: system-wide dashboard =====
         return $this->superAdminDashboard();
     }
 
     // -------------------------------------------------------
-    // SUPER ADMIN DASHBOARD
+    // SUPER ADMIN — system-wide, no school scope
     // -------------------------------------------------------
     private function superAdminDashboard()
     {
         $totalSchools  = School::count();
+        $activeSchools = School::where('is_active', true)->count();
         $totalStudents = Student::withoutGlobalScopes()->count();
         $totalTeachers = Teacher::withoutGlobalScopes()->count();
         $totalStaff    = Staff::withoutGlobalScopes()->count();
         $totalUsers    = User::count();
+
+        $schools = School::withCount(['students', 'teachers', 'staff', 'classes', 'users'])
+            ->with(['users' => fn($q) => $q->whereHas('roles', fn($r) => $r->where('name', 'principal'))])
+            ->latest()->get();
 
         $usersByRole = DB::table('model_has_roles')
             ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
@@ -51,40 +53,14 @@ class AdminDashboardController extends Controller
             ->pluck('count', 'name')
             ->toArray();
 
-        $recentUsers = User::latest()->take(8)->get();
-
-        $monthlyIncome  = Payment::withoutGlobalScopes()->whereMonth('paid_at', now()->month)->whereYear('paid_at', now()->year)->sum('amount');
-        $monthlyExpense = Expense::withoutGlobalScopes()->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('amount');
-        $pendingFees    = FeeVoucher::withoutGlobalScopes()->whereIn('status', ['unpaid', 'partial'])->count();
-
-        $incomeChart = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $m = now()->subMonths($i);
-            $incomeChart[] = [
-                'label'   => $m->format('M'),
-                'income'  => Payment::withoutGlobalScopes()->whereMonth('paid_at', $m->month)->whereYear('paid_at', $m->year)->sum('amount'),
-                'expense' => Expense::withoutGlobalScopes()->whereMonth('date', $m->month)->whereYear('date', $m->year)->sum('amount'),
-            ];
-        }
-
-        $openComplaints   = Complaint::withoutGlobalScopes()->whereIn('status', ['pending', 'in_progress'])->count();
-        $recentComplaints = Complaint::withoutGlobalScopes()->with('user')->latest()->take(5)->get();
-        $upcomingMeetings = MeetingSchedule::withoutGlobalScopes()->where('meeting_date', '>=', now())->where('status', 'scheduled')->orderBy('meeting_date')->take(4)->get();
-        $todayPresent     = TeacherAttendance::withoutGlobalScopes()->where('date', today())->where('status', 'present')->count();
-        $todayAbsent      = TeacherAttendance::withoutGlobalScopes()->where('date', today())->where('status', 'absent')->count();
-        $recentPayments   = Payment::withoutGlobalScopes()->with('feeVoucher.student')->latest('paid_at')->take(6)->get();
-        $schools          = School::withCount(['classes', 'sessions'])->latest()->get();
-
-        return view('admin.dashboard', compact(
-            'totalSchools', 'totalStudents', 'totalTeachers', 'totalStaff', 'totalUsers',
-            'usersByRole', 'recentUsers', 'monthlyIncome', 'monthlyExpense', 'pendingFees',
-            'incomeChart', 'openComplaints', 'recentComplaints', 'upcomingMeetings',
-            'todayPresent', 'todayAbsent', 'recentPayments', 'schools',
+        return view('admin.dashboard_admin', compact(
+            'totalSchools', 'activeSchools', 'totalStudents', 'totalTeachers',
+            'totalStaff', 'totalUsers', 'schools', 'usersByRole',
         ));
     }
 
     // -------------------------------------------------------
-    // PRINCIPAL DASHBOARD (school-scoped)
+    // PRINCIPAL — school-scoped
     // -------------------------------------------------------
     private function principalDashboard(User $user)
     {
@@ -94,7 +70,6 @@ class AdminDashboardController extends Controller
             return view('admin.principal.no_school');
         }
 
-        // Set school in container for BelongsToSchool scopes
         app()->instance('school', $school);
 
         $totalStudents = Student::count();
@@ -122,7 +97,6 @@ class AdminDashboardController extends Controller
         $todayAbsent      = TeacherAttendance::where('date', today())->where('status', 'absent')->count();
         $recentPayments   = Payment::with('feeVoucher.student')->latest('paid_at')->take(6)->get();
 
-        // School users only
         $totalUsers  = User::where('school_id', $school->id)->count();
         $usersByRole = DB::table('users')
             ->join('model_has_roles', 'users.id', '=', 'model_has_roles.model_id')
@@ -134,7 +108,7 @@ class AdminDashboardController extends Controller
             ->toArray();
 
         $recentUsers = User::where('school_id', $school->id)->latest()->take(8)->get();
-        $schools     = collect([$school]); // only own school
+        $schools     = collect([$school]);
 
         return view('admin.dashboard', compact(
             'totalStudents', 'totalTeachers', 'totalStaff', 'pendingFees',

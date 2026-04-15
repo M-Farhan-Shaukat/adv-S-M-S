@@ -51,6 +51,24 @@ class SubjectController extends Controller
         return redirect()->back()->with('success', 'Subject deleted');
     }
 
+    public function edit(string $school, Subject $subject)
+    {
+        $school  = app('school');
+        $classes = SchoolClass::with('sections')->get();
+        return view('school.subjects.edit', compact('subject', 'classes', 'school'));
+    }
+
+    public function update(Request $request, string $school, Subject $subject)
+    {
+        $data = $request->validate([
+            'name'            => 'required|string|max:100',
+            'school_class_id' => 'required|exists:school_classes,id',
+        ]);
+        $subject->update($data);
+        return redirect()->route('school.subjects.index', app('school')->slug)
+            ->with('success', 'Subject updated.');
+    }
+
     // AJAX: get subjects by class
     public function byClass(Request $request)
     {

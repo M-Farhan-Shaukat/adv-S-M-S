@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+@extends($layout ?? 'admin.layouts.app')
 
 @section('content')
     <div class="container-fluid px-2 px-md-3">

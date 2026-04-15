@@ -72,16 +72,24 @@
                                 </span>
                             </td>
                             <td>
-                                @can('delete subject')
-                                <form method="POST"
-                                      action="{{ route('school.subjects.destroy', [$school->slug, $subject]) }}"
-                                      onsubmit="return confirm('Delete?')">
-                                    @csrf @method('DELETE')
-                                    <button class="btn btn-xs btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                                @endcan
+                                <div class="d-flex gap-1">
+                                    @can('update subject')
+                                    <a href="{{ route('school.subjects.edit', [$school->slug, $subject]) }}"
+                                       class="btn btn-xs btn-outline-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    @endcan
+                                    @can('delete subject')
+                                    <form method="POST"
+                                          action="{{ route('school.subjects.destroy', [$school->slug, $subject]) }}"
+                                          onsubmit="return confirm('Delete?')">
+                                        @csrf @method('DELETE')
+                                        <button class="btn btn-xs btn-outline-danger">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    @endcan
+                                </div>
                             </td>
                         </tr>
                         @endforeach

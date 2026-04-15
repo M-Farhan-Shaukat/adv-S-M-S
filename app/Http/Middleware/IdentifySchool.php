@@ -16,11 +16,19 @@ class IdentifySchool
      */
     public function handle($request, Closure $next)
     {
-        $slug = $request->route('school');
-
+        $slug   = $request->route('school');
         $school = School::where('slug', $slug)->firstOrFail();
 
-        // store globally
+        // Block access to inactive school (super admin bypasses)
+        if (!$school->is_active) {
+            $user  = auth()->user();
+            $roles = $user?->getRoleNames()->map(fn($r) => strtolower($r)) ?? collect();
+
+            if (!$roles->contains('admin')) {
+                abort(403, 'This school is inactive. Please contact admin.');
+            }
+        }
+
         app()->instance('school', $school);
 
         return $next($request);

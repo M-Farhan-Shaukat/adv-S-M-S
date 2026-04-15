@@ -37,6 +37,18 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Please use the admin login page.']);
         }
 
+        // Check user is active
+        if (!$user->is_active) {
+            Auth::logout();
+            return back()->withErrors(['email' => 'Your account is inactive. Please contact admin.']);
+        }
+
+        // Check school is active
+        if ($user->school && !$user->school->is_active) {
+            Auth::logout();
+            return back()->withErrors(['email' => 'Your school is inactive. Please contact admin.']);
+        }
+
         // Redirect based on role
         if ($roles->contains('parent') && $user->school) {
             return redirect()->route('parent.dashboard', $user->school->slug);

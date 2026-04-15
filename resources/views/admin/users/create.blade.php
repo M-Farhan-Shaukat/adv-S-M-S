@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+@extends($layout ?? 'admin.layouts.app')
 @section('title', 'Create User')
 
 @section('content')

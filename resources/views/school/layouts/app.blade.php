@@ -154,6 +154,9 @@
             @endcan
 
             @can('create class')
+            <li><a href="{{ route('school.sessions.index', $slug) }}" class="nav-link {{ request()->routeIs('school.sessions.*') ? 'active' : '' }}">
+                <i class="bi bi-calendar3"></i> Sessions
+            </a></li>
             <li><a href="{{ route('school.classes.index', $slug) }}" class="nav-link {{ request()->routeIs('school.classes.*') ? 'active' : '' }}">
                 <i class="bi bi-building"></i> Classes
             </a></li>

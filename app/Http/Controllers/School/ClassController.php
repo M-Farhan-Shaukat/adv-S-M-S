@@ -13,7 +13,7 @@ class ClassController extends Controller
     public function index()
     {
         $school   = app('school');
-        $classes  = SchoolClass::with('sections')->paginate(20);
+        $classes  = SchoolClass::with(['sections', 'session'])->paginate(20);
         $sessions = SchoolSession::all();
         return view('school.classes.index', compact('classes', 'sessions', 'school'));
     }
@@ -32,7 +32,11 @@ class ClassController extends Controller
 
     public function update(Request $request, string $school, SchoolClass $class)
     {
-        $data = $request->validate(['name' => 'required|string', 'code' => 'nullable|string']);
+        $data = $request->validate([
+            'name'              => 'required|string|max:50',
+            'code'              => 'nullable|string|max:20',
+            'school_session_id' => 'required|exists:school_sessions,id',
+        ]);
         $class->update($data);
         return redirect()->back()->with('success', 'Class updated');
     }
