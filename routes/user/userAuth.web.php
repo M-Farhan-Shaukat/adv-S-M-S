@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Route;
 // Guest routes (not logged in)
 Route::middleware('guest')->group(function () {
     // Registration - ONLY for users (not admins)
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'store'])->name('register.store');
+//    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+//    Route::post('/register', [AuthController::class, 'store'])->name('register.store');
     Route::get('/email/verify/{token}', [AuthController::class, 'verifyEmail'])
         ->name('verify.email');
 

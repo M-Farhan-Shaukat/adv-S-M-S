@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'School Management') - {{ app('school')->name ?? '' }}</title>
+    <title>@yield('title', 'School Management') - {{ app()->bound('school') ? app('school')->name : '' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -101,7 +101,7 @@
                 <i class="bi bi-mortarboard-fill text-primary"></i>
             </div>
             <div>
-                <div class="text-white fw-bold" style="font-size:0.9rem;line-height:1.2">{{ app('school')->name }}</div>
+                <div class="text-white fw-bold" style="font-size:0.9rem;line-height:1.2">{{ app()->bound('school') ? app('school')->name : (auth()->user()?->school?->name ?? 'School MS') }}</div>
                 <small class="text-white-50" style="font-size:0.7rem">Management System</small>
             </div>
         </div>
@@ -121,7 +121,9 @@
             </div>
         </div>
 
-        @php $school = app('school'); $slug = $school->slug;
+        @php
+            $school      = app()->bound('school') ? app('school') : auth()->user()?->school;
+            $slug        = $school?->slug ?? '';
             $userRoles   = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r));
             $isPrincipal = $userRoles->contains('principal');
         @endphp
@@ -132,134 +134,133 @@
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a></li>
 
-            {{-- Principal: School Users link --}}
             @if($isPrincipal)
+            {{-- ===== PRINCIPAL: full menu, no @can needed ===== --}}
             <li><a href="{{ route('admin.school.users.index') }}"
                    class="nav-link {{ request()->routeIs('admin.school.users.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> School Users
             </a></li>
-            @endif
+            <li><a href="{{ route('school.custom-roles.index', $slug) }}"
+                   class="nav-link {{ request()->routeIs('school.custom-roles.*') ? 'active' : '' }}">
+                <i class="bi bi-shield-lock"></i> Custom Roles
+            </a></li>
 
+            <div class="sidebar-section">Academic</div>
+            <li><a href="{{ route('school.students.index', $slug) }}" class="nav-link {{ request()->routeIs('school.students.*') ? 'active' : '' }}"><i class="bi bi-people"></i> Students</a></li>
+            <li><a href="{{ route('school.teachers.index', $slug) }}" class="nav-link {{ request()->routeIs('school.teachers.*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i> Teachers</a></li>
+            <li><a href="{{ route('school.sessions.index', $slug) }}" class="nav-link {{ request()->routeIs('school.sessions.*') ? 'active' : '' }}"><i class="bi bi-calendar3"></i> Sessions</a></li>
+            <li><a href="{{ route('school.classes.index', $slug) }}" class="nav-link {{ request()->routeIs('school.classes.*') ? 'active' : '' }}"><i class="bi bi-building"></i> Classes</a></li>
+            <li><a href="{{ route('school.subjects.index', $slug) }}" class="nav-link {{ request()->routeIs('school.subjects.*') ? 'active' : '' }}"><i class="bi bi-book"></i> Subjects</a></li>
+
+            <div class="sidebar-section">Attendance</div>
+            <li><a href="{{ route('school.attendance.teachers', $slug) }}" class="nav-link {{ request()->routeIs('school.attendance.teachers*') ? 'active' : '' }}"><i class="bi bi-calendar-check"></i> Teacher Attendance</a></li>
+            <li><a href="{{ route('school.attendance.students', $slug) }}" class="nav-link {{ request()->routeIs('school.attendance.students*') ? 'active' : '' }}"><i class="bi bi-calendar2-check"></i> Student Attendance</a></li>
+
+            <div class="sidebar-section">Payroll & Staff</div>
+            <li><a href="{{ route('school.payroll.index', $slug) }}" class="nav-link {{ request()->routeIs('school.payroll.*') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i> Teacher Payroll</a></li>
+            <li><a href="{{ route('school.staff.index', $slug) }}" class="nav-link {{ request()->routeIs('school.staff.index') ? 'active' : '' }}"><i class="bi bi-person-lines-fill"></i> Staff</a></li>
+            <li><a href="{{ route('school.staff.salaries', $slug) }}" class="nav-link {{ request()->routeIs('school.staff.salaries*') ? 'active' : '' }}"><i class="bi bi-wallet2"></i> Staff Salaries</a></li>
+
+            <div class="sidebar-section">Fees</div>
+            <li><a href="{{ route('school.fees.vouchers', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.vouchers*') ? 'active' : '' }}"><i class="bi bi-receipt"></i> Fee Vouchers</a></li>
+            <li><a href="{{ route('school.fees.payments', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.payments*') ? 'active' : '' }}"><i class="bi bi-credit-card"></i> Payments</a></li>
+            <li><a href="{{ route('school.fees.structures', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.structures*') ? 'active' : '' }}"><i class="bi bi-list-check"></i> Fee Structures</a></li>
+
+            <div class="sidebar-section">Exams</div>
+            <li><a href="{{ route('school.exams.index', $slug) }}" class="nav-link {{ request()->routeIs('school.exams.*') ? 'active' : '' }}"><i class="bi bi-pencil-square"></i> Exams</a></li>
+
+            <div class="sidebar-section">Communication</div>
+            <li><a href="{{ route('school.complaints.index', $slug) }}" class="nav-link {{ request()->routeIs('school.complaints.*') ? 'active' : '' }}"><i class="bi bi-chat-left-text"></i> Complaints</a></li>
+            <li><a href="{{ route('school.meetings.index', $slug) }}" class="nav-link {{ request()->routeIs('school.meetings.*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i> Meetings</a></li>
+
+            <div class="sidebar-section">Inventory</div>
+            <li><a href="{{ route('school.inventory.index', $slug) }}" class="nav-link {{ request()->routeIs('school.inventory.*') ? 'active' : '' }}"><i class="bi bi-box-seam"></i> Inventory</a></li>
+
+            <div class="sidebar-section">AI Paper Generator</div>
+            <li><a href="{{ route('school.question-bank.index', $slug) }}" class="nav-link {{ request()->routeIs('school.question-bank.*') ? 'active' : '' }}"><i class="bi bi-robot"></i> Question Banks</a></li>
+            <li><a href="{{ route('school.question-bank.papers', $slug) }}" class="nav-link {{ request()->routeIs('school.question-bank.papers*') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i> Generated Papers</a></li>
+
+            <div class="sidebar-section">Reports</div>
+            <li><a href="{{ route('school.reports.income', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.income') ? 'active' : '' }}"><i class="bi bi-graph-up-arrow"></i> Income</a></li>
+            <li><a href="{{ route('school.reports.expense', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.expense') ? 'active' : '' }}"><i class="bi bi-graph-down-arrow"></i> Expenses</a></li>
+            <li><a href="{{ route('school.reports.income-vs-expense', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.income-vs-expense') ? 'active' : '' }}"><i class="bi bi-bar-chart-line"></i> P&L Report</a></li>
+
+            @else
+            {{-- ===== OTHER ROLES: permission-gated menu ===== --}}
             @canany(['view student', 'create student'])
             <div class="sidebar-section">Academic</div>
-            <li><a href="{{ route('school.students.index', $slug) }}" class="nav-link {{ request()->routeIs('school.students.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i> Students
-            </a></li>
+            <li><a href="{{ route('school.students.index', $slug) }}" class="nav-link {{ request()->routeIs('school.students.*') ? 'active' : '' }}"><i class="bi bi-people"></i> Students</a></li>
             @endcanany
 
             @can('view teacher')
-            <li><a href="{{ route('school.teachers.index', $slug) }}" class="nav-link {{ request()->routeIs('school.teachers.*') ? 'active' : '' }}">
-                <i class="bi bi-person-badge"></i> Teachers
-            </a></li>
+            <li><a href="{{ route('school.teachers.index', $slug) }}" class="nav-link {{ request()->routeIs('school.teachers.*') ? 'active' : '' }}"><i class="bi bi-person-badge"></i> Teachers</a></li>
             @endcan
 
             @can('create class')
-            <li><a href="{{ route('school.sessions.index', $slug) }}" class="nav-link {{ request()->routeIs('school.sessions.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar3"></i> Sessions
-            </a></li>
-            <li><a href="{{ route('school.classes.index', $slug) }}" class="nav-link {{ request()->routeIs('school.classes.*') ? 'active' : '' }}">
-                <i class="bi bi-building"></i> Classes
-            </a></li>
-            <li><a href="{{ route('school.subjects.index', $slug) }}" class="nav-link {{ request()->routeIs('school.subjects.*') ? 'active' : '' }}">
-                <i class="bi bi-book"></i> Subjects
-            </a></li>
+            <li><a href="{{ route('school.sessions.index', $slug) }}" class="nav-link {{ request()->routeIs('school.sessions.*') ? 'active' : '' }}"><i class="bi bi-calendar3"></i> Sessions</a></li>
+            <li><a href="{{ route('school.classes.index', $slug) }}" class="nav-link {{ request()->routeIs('school.classes.*') ? 'active' : '' }}"><i class="bi bi-building"></i> Classes</a></li>
+            <li><a href="{{ route('school.subjects.index', $slug) }}" class="nav-link {{ request()->routeIs('school.subjects.*') ? 'active' : '' }}"><i class="bi bi-book"></i> Subjects</a></li>
             @endcan
 
             @canany(['mark teacher attendance', 'mark student attendance'])
             <div class="sidebar-section">Attendance</div>
             @endcanany
-
             @can('mark teacher attendance')
-            <li><a href="{{ route('school.attendance.teachers', $slug) }}" class="nav-link {{ request()->routeIs('school.attendance.teachers*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-check"></i> Teacher Attendance
-            </a></li>
+            <li><a href="{{ route('school.attendance.teachers', $slug) }}" class="nav-link {{ request()->routeIs('school.attendance.teachers*') ? 'active' : '' }}"><i class="bi bi-calendar-check"></i> Teacher Attendance</a></li>
             @endcan
-
             @can('mark student attendance')
-            <li><a href="{{ route('school.attendance.students', $slug) }}" class="nav-link {{ request()->routeIs('school.attendance.students*') ? 'active' : '' }}">
-                <i class="bi bi-calendar2-check"></i> Student Attendance
-            </a></li>
+            <li><a href="{{ route('school.attendance.students', $slug) }}" class="nav-link {{ request()->routeIs('school.attendance.students*') ? 'active' : '' }}"><i class="bi bi-calendar2-check"></i> Student Attendance</a></li>
             @endcan
 
             @canany(['generate payroll', 'view payroll'])
             <div class="sidebar-section">Payroll</div>
-            <li><a href="{{ route('school.payroll.index', $slug) }}" class="nav-link {{ request()->routeIs('school.payroll.*') ? 'active' : '' }}">
-                <i class="bi bi-cash-stack"></i> Teacher Payroll
-            </a></li>
+            <li><a href="{{ route('school.payroll.index', $slug) }}" class="nav-link {{ request()->routeIs('school.payroll.*') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i> Teacher Payroll</a></li>
             @endcanany
-
             @can('manage salary structure')
-            <li><a href="{{ route('school.staff.salaries', $slug) }}" class="nav-link {{ request()->routeIs('school.staff.salaries*') ? 'active' : '' }}">
-                <i class="bi bi-wallet2"></i> Staff Salaries
-            </a></li>
+            <li><a href="{{ route('school.staff.salaries', $slug) }}" class="nav-link {{ request()->routeIs('school.staff.salaries*') ? 'active' : '' }}"><i class="bi bi-wallet2"></i> Staff Salaries</a></li>
             @endcan
 
             @canany(['view fee', 'generate fee voucher'])
             <div class="sidebar-section">Fees</div>
-            <li><a href="{{ route('school.fees.vouchers', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.vouchers*') ? 'active' : '' }}">
-                <i class="bi bi-receipt"></i> Fee Vouchers
-            </a></li>
-            <li><a href="{{ route('school.fees.payments', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.payments*') ? 'active' : '' }}">
-                <i class="bi bi-credit-card"></i> Payments
-            </a></li>
-            <li><a href="{{ route('school.fees.structures', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.structures*') ? 'active' : '' }}">
-                <i class="bi bi-list-check"></i> Fee Structures
-            </a></li>
+            <li><a href="{{ route('school.fees.vouchers', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.vouchers*') ? 'active' : '' }}"><i class="bi bi-receipt"></i> Fee Vouchers</a></li>
+            <li><a href="{{ route('school.fees.payments', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.payments*') ? 'active' : '' }}"><i class="bi bi-credit-card"></i> Payments</a></li>
+            <li><a href="{{ route('school.fees.structures', $slug) }}" class="nav-link {{ request()->routeIs('school.fees.structures*') ? 'active' : '' }}"><i class="bi bi-list-check"></i> Fee Structures</a></li>
             @endcanany
 
             @canany(['create exam', 'view exam'])
             <div class="sidebar-section">Exams</div>
-            <li><a href="{{ route('school.exams.index', $slug) }}" class="nav-link {{ request()->routeIs('school.exams.*') ? 'active' : '' }}">
-                <i class="bi bi-pencil-square"></i> Exams
-            </a></li>
+            <li><a href="{{ route('school.exams.index', $slug) }}" class="nav-link {{ request()->routeIs('school.exams.*') ? 'active' : '' }}"><i class="bi bi-pencil-square"></i> Exams</a></li>
             @endcanany
 
             @can('view staff')
             <div class="sidebar-section">Staff</div>
-            <li><a href="{{ route('school.staff.index', $slug) }}" class="nav-link {{ request()->routeIs('school.staff.index') ? 'active' : '' }}">
-                <i class="bi bi-person-lines-fill"></i> Staff
-            </a></li>
+            <li><a href="{{ route('school.staff.index', $slug) }}" class="nav-link {{ request()->routeIs('school.staff.index') ? 'active' : '' }}"><i class="bi bi-person-lines-fill"></i> Staff</a></li>
             @endcan
 
             @can('manage inventory')
             <div class="sidebar-section">Inventory</div>
-            <li><a href="{{ route('school.inventory.index', $slug) }}" class="nav-link {{ request()->routeIs('school.inventory.*') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i> Inventory
-            </a></li>
+            <li><a href="{{ route('school.inventory.index', $slug) }}" class="nav-link {{ request()->routeIs('school.inventory.*') ? 'active' : '' }}"><i class="bi bi-box-seam"></i> Inventory</a></li>
             @endcan
 
             @can('view complaint')
             <div class="sidebar-section">Communication</div>
-            <li><a href="{{ route('school.complaints.index', $slug) }}" class="nav-link {{ request()->routeIs('school.complaints.*') ? 'active' : '' }}">
-                <i class="bi bi-chat-left-text"></i> Complaints
-            </a></li>
-            <li><a href="{{ route('school.meetings.index', $slug) }}" class="nav-link {{ request()->routeIs('school.meetings.*') ? 'active' : '' }}">
-                <i class="bi bi-calendar-event"></i> Meetings
-            </a></li>
+            <li><a href="{{ route('school.complaints.index', $slug) }}" class="nav-link {{ request()->routeIs('school.complaints.*') ? 'active' : '' }}"><i class="bi bi-chat-left-text"></i> Complaints</a></li>
+            <li><a href="{{ route('school.meetings.index', $slug) }}" class="nav-link {{ request()->routeIs('school.meetings.*') ? 'active' : '' }}"><i class="bi bi-calendar-event"></i> Meetings</a></li>
             @endcan
 
             @can('create exam')
             <div class="sidebar-section">AI Paper Generator</div>
-            <li><a href="{{ route('school.question-bank.index', $slug) }}" class="nav-link {{ request()->routeIs('school.question-bank.*') ? 'active' : '' }}">
-                <i class="bi bi-robot"></i> Question Banks
-            </a></li>
-            <li><a href="{{ route('school.question-bank.papers', $slug) }}" class="nav-link {{ request()->routeIs('school.question-bank.papers*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-text"></i> Generated Papers
-            </a></li>
+            <li><a href="{{ route('school.question-bank.index', $slug) }}" class="nav-link {{ request()->routeIs('school.question-bank.*') ? 'active' : '' }}"><i class="bi bi-robot"></i> Question Banks</a></li>
+            <li><a href="{{ route('school.question-bank.papers', $slug) }}" class="nav-link {{ request()->routeIs('school.question-bank.papers*') ? 'active' : '' }}"><i class="bi bi-file-earmark-text"></i> Generated Papers</a></li>
             @endcan
 
             @canany(['view income report', 'view expense report'])
             <div class="sidebar-section">Reports</div>
-            <li><a href="{{ route('school.reports.income', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.income') ? 'active' : '' }}">
-                <i class="bi bi-graph-up-arrow"></i> Income
-            </a></li>
-            <li><a href="{{ route('school.reports.expense', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.expense') ? 'active' : '' }}">
-                <i class="bi bi-graph-down-arrow"></i> Expenses
-            </a></li>
-            <li><a href="{{ route('school.reports.income-vs-expense', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.income-vs-expense') ? 'active' : '' }}">
-                <i class="bi bi-bar-chart-line"></i> P&L Report
-            </a></li>
+            <li><a href="{{ route('school.reports.income', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.income') ? 'active' : '' }}"><i class="bi bi-graph-up-arrow"></i> Income</a></li>
+            <li><a href="{{ route('school.reports.expense', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.expense') ? 'active' : '' }}"><i class="bi bi-graph-down-arrow"></i> Expenses</a></li>
+            <li><a href="{{ route('school.reports.income-vs-expense', $slug) }}" class="nav-link {{ request()->routeIs('school.reports.income-vs-expense') ? 'active' : '' }}"><i class="bi bi-bar-chart-line"></i> P&L Report</a></li>
             @endcanany
+            @endif
         </ul>
 
         <div class="mt-4 pt-3 border-top border-white border-opacity-25">
@@ -281,7 +282,7 @@
             <button class="btn btn-sm btn-outline-secondary" onclick="toggleSidebar()">
                 <i class="bi bi-list fs-5"></i>
             </button>
-            <span class="school-badge d-none d-md-inline">{{ app('school')->name }}</span>
+            <span class="school-badge d-none d-md-inline">{{ $school?->name ?? '' }}</span>
             <nav aria-label="breadcrumb" class="d-none d-md-block">
                 <ol class="breadcrumb mb-0 small">
                     @yield('breadcrumb')

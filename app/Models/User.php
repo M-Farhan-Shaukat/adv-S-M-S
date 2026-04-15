@@ -113,6 +113,36 @@ class User extends Authenticatable
         return $this->hasPermissionTo($permission);
     }
 
+    // Custom school roles assigned to this user
+    public function schoolCustomRoles()
+    {
+        return $this->belongsToMany(SchoolCustomRole::class, 'school_custom_role_users');
+    }
+
+    // Check if user has a permission via custom school role
+    public function hasCustomRolePermission(string $permission): bool
+    {
+        return $this->schoolCustomRoles()
+            ->whereHas('permissions', fn($q) => $q->where('permission', $permission))
+            ->exists();
+    }
+
+    // Override Spatie's can() check to also include custom role permissions
+    public function hasPermissionTo($permission, $guardName = null): bool
+    {
+        // Check Spatie first
+        try {
+            if (parent::hasPermissionTo($permission, $guardName)) {
+                return true;
+            }
+        } catch (\Exception $e) {
+            // permission doesn't exist in Spatie
+        }
+
+        // Fall back to custom school role permissions
+        return $this->hasCustomRolePermission((string) $permission);
+    }
+
 
 
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\School\AttendanceController;
 use App\Http\Controllers\School\ClassController;
 use App\Http\Controllers\School\ComplaintController;
+use App\Http\Controllers\School\CustomRoleController;
 use App\Http\Controllers\School\ExamController;
 use App\Http\Controllers\School\FeeManagementController;
 use App\Http\Controllers\School\InventoryController;
@@ -21,6 +22,17 @@ Route::prefix('{school}')
     ->middleware(['identify.school', 'auth'])
     ->name('school.')
     ->group(function () {
+
+        // =================== CUSTOM ROLES ===================
+        Route::prefix('custom-roles')->name('custom-roles.')->group(function () {
+            Route::get('/',                                        [CustomRoleController::class, 'index'])->name('index');
+            Route::post('/',                                       [CustomRoleController::class, 'store'])->name('store');
+            Route::get('/{customRole}/edit',                       [CustomRoleController::class, 'edit'])->name('edit');
+            Route::put('/{customRole}',                            [CustomRoleController::class, 'update'])->name('update');
+            Route::delete('/{customRole}',                         [CustomRoleController::class, 'destroy'])->name('destroy');
+            Route::post('/{customRole}/assign-user',               [CustomRoleController::class, 'assignUser'])->name('assign-user');
+            Route::delete('/{customRole}/remove-user/{user}',      [CustomRoleController::class, 'removeUser'])->name('remove-user');
+        });
 
         // Dashboard
         Route::get('/dashboard', [SchoolDashboardController::class, 'index'])->name('dashboard');

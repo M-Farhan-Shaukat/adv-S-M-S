@@ -45,6 +45,9 @@ class AdminLoginController extends Controller
             return back()->withErrors(['email' => 'Your school is inactive. Please contact admin.']);
         }
 
+        // Flush permission cache so sidebar shows correctly
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+
         return redirect()->route('admin.dashboard');
     }
 

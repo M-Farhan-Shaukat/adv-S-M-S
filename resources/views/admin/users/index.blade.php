@@ -8,7 +8,7 @@
                 <h3 class="fw-bold mb-0 fs-5 fs-md-4">Users</h3>
                 <p class="text-muted mb-0 small d-none d-sm-block">Manage system users and their permissions</p>
             </div>
-            <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">
+            <a href="{{ route($routePrefix . 'create') }}" class="btn btn-primary btn-sm">
                 <i class="bi bi-plus-lg"></i> Create User
             </a>
         </div>
@@ -18,7 +18,7 @@
             <div class="card-body p-2 p-md-3">
                 <div class="d-flex flex-column flex-md-row gap-2 align-items-start align-items-md-center">
                     <div class="col-auto">
-                        <form method="GET" action="{{ route('admin.users') }}" id="perPageForm" class="d-flex align-items-center">
+                        <form method="GET" action="{{ route($routePrefix . 'index') }}" id="perPageForm" class="d-flex align-items-center">
                             <label class="text-muted me-2 small">Show:</label>
                             <select name="per_page" onchange="this.form.submit()" class="form-select form-select-sm" style="width: auto; min-width: 70px;">
                                 <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
@@ -29,7 +29,7 @@
                         </form>
                     </div>
                     <div class="ms-md-auto w-100 w-md-auto">
-                        <form method="GET" action="{{ route('admin.users') }}" class="d-flex">
+                        <form method="GET" action="{{ route($routePrefix . 'index') }}" class="d-flex">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-white border-end-0">
                                     <i class="bi bi-search text-muted"></i>
@@ -41,7 +41,7 @@
                                        placeholder="Search users..."
                                        style="min-width: 200px;">
                                 @if(request('search'))
-                                    <a href="{{ route('admin.users') }}" class="btn btn-outline-secondary">
+                                    <a href="{{ route($routePrefix . 'index') }}" class="btn btn-outline-secondary">
                                         <i class="bi bi-x"></i>
                                     </a>
                                 @endif
@@ -107,7 +107,7 @@
                             </td>
                             <td class="text-end px-4">
                                 <!-- View Button -->
-                                <a href="{{ route('admin.users.show', $user) }}"
+                                <a href="{{ route($routePrefix . 'show', $user) }}"
                                    class="btn btn-sm btn-outline-info border-0"
                                    title="View Details"
                                    data-bs-toggle="tooltip">
@@ -115,7 +115,7 @@
                                 </a>
 
                                 <!-- Edit Button -->
-                                <a href="{{ route('admin.users.edit', $user) }}"
+                                <a href="{{ route($routePrefix . 'edit', $user) }}"
                                    class="btn btn-sm btn-outline-primary border-0"
                                    title="Edit User"
                                    data-bs-toggle="tooltip">
@@ -176,7 +176,7 @@
 
                                                 <div class="d-flex gap-2 justify-content-center">
                                                     <button type="button" class="btn btn-sm btn-light px-4" data-bs-dismiss="modal">Cancel</button>
-                                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST">
+                                                    <form action="{{ route($routePrefix . 'destroy', $user) }}" method="POST">
                                                         @csrf @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-danger px-4">Delete</button>
                                                     </form>
@@ -228,7 +228,7 @@
 
                                                 <div class="d-flex gap-2 justify-content-center">
                                                     <button type="button" class="btn btn-sm btn-light px-4" data-bs-dismiss="modal">Cancel</button>
-                                                    <form action="{{ route('admin.users.status', $user) }}" method="POST">
+                                                    <form action="{{ route($routePrefix . 'status', $user) }}" method="POST">
                                                         @csrf @method('PATCH')
                                                         <button type="submit" class="btn btn-sm px-4 {{ $user->is_active ? 'btn-warning' : 'btn-success' }} text-white">
                                                             Yes, {{ $user->is_active ? 'Deactivate' : 'Activate' }}
@@ -247,7 +247,7 @@
                                 <div class="py-4">
                                     <i class="bi bi-people fs-1 text-muted mb-3"></i>
                                     <h5 class="fw-normal text-muted mb-3">No users found</h5>
-                                    <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">
+                                    <a href="{{ route($routePrefix . 'create') }}" class="btn btn-primary btn-sm">
                                         <i class="bi bi-plus-lg"></i> Create User
                                     </a>
                                 </div>
@@ -299,12 +299,12 @@
                                 @endif
                             </div>
                             <div class="d-flex gap-1">
-                                <a href="{{ route('admin.users.show', $user) }}"
+                                <a href="{{ route($routePrefix . 'show', $user) }}"
                                    class="btn btn-sm btn-outline-info border-0"
                                    title="View Details">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{{ route('admin.users.edit', $user) }}"
+                                <a href="{{ route($routePrefix . 'edit', $user) }}"
                                    class="btn btn-sm btn-outline-primary border-0"
                                    title="Edit User">
                                     <i class="bi bi-pencil"></i>
@@ -361,7 +361,7 @@
 
                                     <div class="d-flex gap-2 justify-content-center">
                                         <button type="button" class="btn btn-sm btn-light px-3" data-bs-dismiss="modal">Cancel</button>
-                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST">
+                                        <form action="{{ route($routePrefix . 'destroy', $user) }}" method="POST">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-danger px-3">Delete</button>
                                         </form>
@@ -413,7 +413,7 @@
 
                                     <div class="d-flex gap-2 justify-content-center">
                                         <button type="button" class="btn btn-sm btn-light px-3" data-bs-dismiss="modal">Cancel</button>
-                                        <form action="{{ route('admin.users.status', $user) }}" method="POST">
+                                        <form action="{{ route($routePrefix . 'status', $user) }}" method="POST">
                                             @csrf @method('PATCH')
                                             <button type="submit" class="btn btn-sm px-3 {{ $user->is_active ? 'btn-warning' : 'btn-success' }} text-white">
                                                 Yes, {{ $user->is_active ? 'Deactivate' : 'Activate' }}
@@ -428,7 +428,7 @@
                     <div class="text-center py-4">
                         <i class="bi bi-people fs-1 text-muted mb-2"></i>
                         <h5 class="fw-normal text-muted mb-2 small">No users found</h5>
-                        <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">
+                        <a href="{{ route($routePrefix . 'create') }}" class="btn btn-primary btn-sm">
                             <i class="bi bi-plus-lg"></i> Create User
                         </a>
                     </div>

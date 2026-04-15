@@ -4,25 +4,27 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0 fw-bold"><i class="bi bi-pencil me-2"></i>Edit User: {{ $user->name }}</h5>
-    <a href="{{ route('admin.users') }}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ route($routePrefix . 'index') }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Back
     </a>
 </div>
 
 <div class="card border-0 shadow-sm" style="max-width:650px">
     <div class="card-body p-4">
-        <form method="POST" action="{{ route('admin.users.update', $user) }}">
+        <form method="POST" action="{{ route($routePrefix . 'update', $user) }}">
             @csrf @method('PUT')
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label small fw-semibold">Full Name *</label>
-                    <input type="text" name="name" class="form-control form-control-sm @error('name') is-invalid @enderror"
+                    <input type="text" name="name"
+                           class="form-control form-control-sm @error('name') is-invalid @enderror"
                            value="{{ old('name', $user->name) }}" required>
                     @error('name')<div class="invalid-feedback small">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-6">
                     <label class="form-label small fw-semibold">Email *</label>
-                    <input type="email" name="email" class="form-control form-control-sm @error('email') is-invalid @enderror"
+                    <input type="email" name="email"
+                           class="form-control form-control-sm @error('email') is-invalid @enderror"
                            value="{{ old('email', $user->email) }}" required>
                     @error('email')<div class="invalid-feedback small">{{ $message }}</div>@enderror
                 </div>
@@ -56,6 +58,9 @@
                     </div>
                     @error('password')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                 </div>
+
+                {{-- School: only super admin can change it --}}
+                @if(!($isPrincipal ?? false))
                 <div class="col-md-6">
                     <label class="form-label small fw-semibold">School</label>
                     <select name="school_id" class="form-select form-select-sm">
@@ -67,17 +72,22 @@
                         @endforeach
                     </select>
                 </div>
+                @else
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">School</label>
+                    <input type="text" class="form-control form-control-sm bg-light"
+                           value="{{ $user->school?->name ?? auth()->user()->school?->name }}" disabled>
+                </div>
+                @endif
+
                 <div class="col-12">
                     <div class="d-flex gap-4 bg-light p-2 rounded-3">
-                        {{--<div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="is_active" id="isActive"
-                                   {{ $user->is_active ? 'checked' : '' }}>
-                            <label class="form-check-label small fw-semibold" for="isActive">Active</label>
-                        </div>--}}
                         @if(!$user->email_verified_at)
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" name="email_verified" id="emailVerified">
-                            <label class="form-check-label small fw-semibold" for="emailVerified">Mark Email Verified</label>
+                            <label class="form-check-label small fw-semibold" for="emailVerified">
+                                Mark Email Verified
+                            </label>
                         </div>
                         @else
                         <span class="small text-success align-self-center">
@@ -91,7 +101,7 @@
                 <button type="submit" class="btn btn-primary btn-sm">
                     <i class="bi bi-check-lg me-1"></i>Update User
                 </button>
-                <a href="{{ route('admin.users') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                <a href="{{ route($routePrefix . 'index') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
             </div>
         </form>
     </div>
@@ -120,7 +130,7 @@
                 <p class="small text-muted mb-3">This cannot be undone.</p>
                 <div class="d-flex gap-2 justify-content-center">
                     <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <form method="POST" action="{{ route('admin.users.destroy', $user) }}">
+                    <form method="POST" action="{{ route($routePrefix . 'destroy', $user) }}">
                         @csrf @method('DELETE')
                         <button class="btn btn-sm btn-danger">Delete</button>
                     </form>

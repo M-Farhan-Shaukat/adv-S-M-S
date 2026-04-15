@@ -108,21 +108,21 @@
                         </form>
 
                         <!-- Divider -->
-                        <div class="position-relative my-4">
+                        {{--<div class="position-relative my-4">
                             <hr class="opacity-25">
                             <div class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
                                 or
                             </div>
-                        </div>
+                        </div>--}}
 
                         <!-- Register Link -->
-                        <div class="text-center">
+                        {{--<div class="text-center">
                             <p class="text-muted small mb-1">Don't have an account?</p>
                             <a href="{{ route('register') }}" class="btn btn-outline-primary btn-sm py-2 px-4 rounded-3">
                                 <i class="bi bi-person-plus me-1"></i>
                                 Create Account
                             </a>
-                        </div>
+                        </div>--}}
                     </div>
                 </div>
 

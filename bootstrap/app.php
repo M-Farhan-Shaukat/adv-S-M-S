@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SetSchoolForTesting::class);
+        $middleware->append(\App\Http\Middleware\BindPrincipalSchool::class);
         $middleware->alias([
             'guest.custom'    => \App\Http\Middleware\RedirectIfAuthenticatedCustom::class,
             'user.auth'       => \App\Http\Middleware\UserAuth::class,

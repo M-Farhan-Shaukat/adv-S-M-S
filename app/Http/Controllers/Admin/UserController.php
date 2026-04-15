@@ -52,10 +52,11 @@ class UserController extends Controller
             ->paginate($perPage)
             ->appends($request->only(['per_page', 'search', 'role']));
 
-        $roles  = $this->allowedRoles();
-        $layout = $this->resolveLayout();
+        $roles       = $this->allowedRoles();
+        $layout      = $this->resolveLayout();
+        $routePrefix = $this->routePrefix();
 
-        return view('admin.users.index', compact('users', 'perPage', 'roles', 'layout'));
+        return view('admin.users.index', compact('users', 'perPage', 'roles', 'layout', 'routePrefix'));
     }
 
     /** Super admin: view users of a specific school */
@@ -79,9 +80,11 @@ class UserController extends Controller
     }
     public function create()
     {
-        $roles  = $this->allowedRoles();
-        $layout = $this->resolveLayout();
-        return view('admin.users.create', compact('roles', 'layout'));
+        $roles       = $this->allowedRoles();
+        $layout      = $this->resolveLayout();
+        $routePrefix = $this->routePrefix();
+        $isPrincipal = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r))->contains('principal');
+        return view('admin.users.create', compact('roles', 'layout', 'routePrefix', 'isPrincipal'));
     }
 
     public function store(Request $request)
@@ -125,17 +128,19 @@ class UserController extends Controller
             portalNote: $this->getPortalNote($data['role'], $user),
         );
 
-        return redirect()->route('admin.users')
+        return redirect()->route($this->routePrefix() . 'index')
             ->with('success', "User '{$user->name}' created. Credentials sent to {$user->email}");
     }
 
     public function edit(User $user)
     {
         $this->authorizeAccess($user);
-        $roles    = $this->allowedRoles();
-        $userRole = $user->getRoleNames()->first() ?? '';
-        $layout   = $this->resolveLayout();
-        return view('admin.users.edit', compact('user', 'roles', 'userRole', 'layout'));
+        $roles       = $this->allowedRoles();
+        $userRole    = $user->getRoleNames()->first() ?? '';
+        $layout      = $this->resolveLayout();
+        $routePrefix = $this->routePrefix();
+        $isPrincipal = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r))->contains('principal');
+        return view('admin.users.edit', compact('user', 'roles', 'userRole', 'layout', 'routePrefix', 'isPrincipal'));
     }
 
     public function update(Request $request, User $user)
@@ -177,7 +182,7 @@ class UserController extends Controller
 
         $user->syncRoles([$data['role']]);
 
-        return redirect()->route('admin.users')->with('success', "User '{$user->name}' updated");
+        return redirect()->route($this->routePrefix() . 'index')->with('success', "User '{$user->name}' updated");
     }
 
     public function toggleStatus(User $user)
@@ -191,8 +196,9 @@ class UserController extends Controller
     {
         $this->authorizeAccess($user);
         $user->load('roles');
-        $layout = $this->resolveLayout();
-        return view('admin.users.show', compact('user', 'layout'));
+        $layout      = $this->resolveLayout();
+        $routePrefix = $this->routePrefix();
+        return view('admin.users.show', compact('user', 'layout', 'routePrefix'));
     }
 
     public function destroy(User $user)
@@ -204,7 +210,7 @@ class UserController extends Controller
         }
         $name = $user->name;
         $user->delete();
-        return redirect()->route('admin.users')->with('success', "User '{$name}' deleted");
+        return redirect()->route($this->routePrefix() . 'index')->with('success', "User '{$name}' deleted");
     }
 
     /** Abort if principal tries to access user from another school */
@@ -218,14 +224,13 @@ class UserController extends Controller
         }
     }
 
-    /** Returns the correct layout based on logged-in role */
+    /** Returns the correct layout and route prefix based on logged-in role */
     private function resolveLayout(): string
     {
         $authUser  = auth()->user();
         $authRoles = $authUser->getRoleNames()->map(fn($r) => strtolower($r));
 
         if ($authRoles->contains('principal') && !$authRoles->contains('admin')) {
-            // Ensure school is bound for the school layout
             if ($authUser->school && !app()->bound('school')) {
                 app()->instance('school', $authUser->school);
             }
@@ -233,6 +238,15 @@ class UserController extends Controller
         }
 
         return 'admin.layouts.app';
+    }
+
+    /** Route prefix for user management links — differs for admin vs principal */
+    private function routePrefix(): string
+    {
+        $roles = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r));
+        return ($roles->contains('principal') && !$roles->contains('admin'))
+            ? 'admin.school.users.'
+            : 'admin.users.';
     }
 
     private function getLoginUrl(string $role): string
