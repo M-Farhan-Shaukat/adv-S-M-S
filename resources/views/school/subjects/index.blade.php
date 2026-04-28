@@ -36,10 +36,6 @@
             </div>
         </div>
         <div class="mt-3">
-            <a href="{{ route('school.subjects.assignments', $school->slug) }}"
-               class="btn btn-outline-primary w-100 btn-sm">
-                <i class="bi bi-person-check me-2"></i>Manage Teacher Assignments
-            </a>
         </div>
     </div>
 

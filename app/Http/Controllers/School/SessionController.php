@@ -54,4 +54,11 @@ class SessionController extends Controller
         $session->delete();
         return redirect()->back()->with('success', 'Session deleted.');
     }
+
+    public function toggleStatus(string $school, SchoolSession $session)
+    {
+        $newStatus = $session->status === 'active' ? 'inactive' : 'active';
+        $session->update(['status' => $newStatus]);
+        return redirect()->back()->with('success', "Session marked as {$newStatus}.");
+    }
 }

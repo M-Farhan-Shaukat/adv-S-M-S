@@ -20,11 +20,3 @@ Route::prefix('admin')
     ->group(function () {
         require __DIR__ . '/dashboard.web.php';
     });
-
-// ===== PRINCIPAL ONLY: manage own school users =====
-Route::prefix('admin')
-    ->middleware(['auth', 'role:principal'])
-    ->name('admin.')
-    ->group(function () {
-        require __DIR__ . '/PrincipalUsers.web.php';
-    });

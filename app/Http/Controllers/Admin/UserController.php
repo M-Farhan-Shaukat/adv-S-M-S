@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 
@@ -21,12 +22,14 @@ class UserController extends Controller
             return User::with('roles');
         }
 
-        // Principal sees only their school's users
-        return User::with('roles')->where('school_id', $authUser->school_id);
+        // Principal sees their school's users — excluding students
+        return User::with('roles')
+            ->where('school_id', $authUser->school_id)
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', 'student'));
     }
 
     /** Roles principal is allowed to assign */
-    private function allowedRoles(): \Illuminate\Database\Eloquent\Collection
+    private function allowedRoles(): \Illuminate\Support\Collection
     {
         $authUser = auth()->user();
         $roles    = $authUser->getRoleNames()->map(fn($r) => strtolower($r));
@@ -35,9 +38,27 @@ class UserController extends Controller
             return Role::orderBy('name')->get();
         }
 
-        // Principal can only create school-level roles
-        return Role::whereIn('name', ['principal', 'teacher', 'staff', 'student', 'parent'])
-            ->orderBy('name')->get();
+        // Principal: system roles (no student, no principal) + their custom roles
+        $systemRoles = Role::whereIn('name', ['teacher', 'staff', 'parent'])
+            ->orderBy('name')
+            ->get()
+            ->map(fn($r) => (object)[
+                'name'   => $r->name,
+                'label'  => ucfirst($r->name),
+                'custom' => false,
+            ]);
+
+        $customRoles = \App\Models\SchoolCustomRole::where('school_id', $authUser->school_id)
+            ->orderBy('name')
+            ->get()
+            ->map(fn($r) => (object)[
+                'name'   => $r->name,
+                'label'  => $r->name . ' (custom)',
+                'custom' => true,
+                'id'     => $r->id,
+            ]);
+
+        return $systemRoles->concat($customRoles);
     }
 
     public function index(Request $request)
@@ -55,8 +76,9 @@ class UserController extends Controller
         $roles       = $this->allowedRoles();
         $layout      = $this->resolveLayout();
         $routePrefix = $this->routePrefix();
+        $routeParams = $this->routeParams();
 
-        return view('admin.users.index', compact('users', 'perPage', 'roles', 'layout', 'routePrefix'));
+        return view('admin.users.index', compact('users', 'perPage', 'roles', 'layout', 'routePrefix', 'routeParams'));
     }
 
     /** Super admin: view users of a specific school */
@@ -83,27 +105,39 @@ class UserController extends Controller
         $roles       = $this->allowedRoles();
         $layout      = $this->resolveLayout();
         $routePrefix = $this->routePrefix();
+        $routeParams = $this->routeParams();
         $isPrincipal = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r))->contains('principal');
-        return view('admin.users.create', compact('roles', 'layout', 'routePrefix', 'isPrincipal'));
+        return view('admin.users.create', compact('roles', 'layout', 'routePrefix', 'routeParams', 'isPrincipal'));
     }
 
     public function store(Request $request)
     {
-        $authUser = auth()->user();
+        $authUser  = auth()->user();
         $authRoles = $authUser->getRoleNames()->map(fn($r) => strtolower($r));
+        $isPrincipal = $authRoles->contains('principal') && !$authRoles->contains('admin');
 
         $data = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'phone'    => 'nullable|string|max:20',
-            'password' => 'required|min:6',
-            'role'     => 'required|exists:roles,name',
+            'name'        => 'required|string|max:255',
+            'email'       => 'required|email|unique:users,email',
+            'phone'       => 'nullable|string|max:20',
+            'password'    => 'required|min:6',
+            'role'        => 'required|string',
+            'custom_role' => 'nullable|string', // "custom:{id}"
         ]);
 
-        // Principal can only assign to their own school
         $schoolId = $authRoles->contains('admin')
             ? ($request->school_id ?: null)
             : $authUser->school_id;
+
+        // Determine if it's a custom role
+        $isCustomRole   = str_starts_with($data['role'], 'custom:');
+        $customRoleId   = $isCustomRole ? (int) str_replace('custom:', '', $data['role']) : null;
+        $spatieRoleName = $isCustomRole ? 'staff' : $data['role']; // fallback spatie role for custom
+
+        // Validate spatie role exists if not custom
+        if (!$isCustomRole && !Role::where('name', $data['role'])->exists()) {
+            return back()->withErrors(['role' => 'Invalid role selected.'])->withInput();
+        }
 
         $user = User::create([
             'name'              => $data['name'],
@@ -111,24 +145,31 @@ class UserController extends Controller
             'phone'             => $data['phone'] ?? null,
             'school_id'         => $schoolId,
             'password'          => Hash::make($data['password']),
-            'is_active'         => $request->boolean('is_active', true),
+            'is_active'         => true,
             'email_verified_at' => $request->boolean('email_verified') ? now() : null,
         ]);
 
-        $user->syncRoles([$data['role']]);
+        $user->syncRoles([$spatieRoleName]);
 
-        // Send welcome credentials email
+        // Assign custom role if selected
+        if ($isCustomRole && $customRoleId) {
+            $customRole = \App\Models\SchoolCustomRole::find($customRoleId);
+            if ($customRole && $customRole->school_id === $schoolId) {
+                $customRole->users()->syncWithoutDetaching([$user->id]);
+            }
+        }
+
         \App\Services\CredentialService::sendCredentials(
             email:      $user->email,
             name:       $user->name,
             password:   $data['password'],
-            role:       ucfirst($data['role']),
+            role:       $isCustomRole ? ($customRole->name ?? 'Staff') : ucfirst($data['role']),
             schoolName: $user->school?->name ?? config('app.name'),
-            loginUrl:   $this->getLoginUrl($data['role']),
-            portalNote: $this->getPortalNote($data['role'], $user),
+            loginUrl:   $this->getLoginUrl($spatieRoleName),
+            portalNote: $this->getPortalNote($spatieRoleName, $user),
         );
 
-        return redirect()->route($this->routePrefix() . 'index')
+        return redirect()->route($this->routePrefix() . 'index', $this->routeParams())
             ->with('success', "User '{$user->name}' created. Credentials sent to {$user->email}");
     }
 
@@ -139,8 +180,9 @@ class UserController extends Controller
         $userRole    = $user->getRoleNames()->first() ?? '';
         $layout      = $this->resolveLayout();
         $routePrefix = $this->routePrefix();
+        $routeParams = $this->routeParams();
         $isPrincipal = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r))->contains('principal');
-        return view('admin.users.edit', compact('user', 'roles', 'userRole', 'layout', 'routePrefix', 'isPrincipal'));
+        return view('admin.users.edit', compact('user', 'roles', 'userRole', 'layout', 'routePrefix', 'routeParams', 'isPrincipal'));
     }
 
     public function update(Request $request, User $user)
@@ -154,7 +196,7 @@ class UserController extends Controller
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email,' . $user->id,
             'phone'    => 'nullable|string|max:20',
-            'role'     => 'required|exists:roles,name',
+            'role'     => 'required|string',
             'password' => 'nullable|min:6',
         ]);
 
@@ -180,9 +222,29 @@ class UserController extends Controller
             $user->update(['password' => Hash::make($data['password'])]);
         }
 
-        $user->syncRoles([$data['role']]);
+        // Handle custom vs spatie role
+        $isCustomRole = str_starts_with($data['role'], 'custom:');
+        if ($isCustomRole) {
+            $customRoleId = (int) str_replace('custom:', '', $data['role']);
+            $user->syncRoles(['staff']); // base spatie role
+            $customRole = \App\Models\SchoolCustomRole::find($customRoleId);
+            if ($customRole) {
+                // Remove from all other custom roles of this school, assign new one
+                $schoolCustomRoleIds = \App\Models\SchoolCustomRole::where('school_id', $user->school_id)->pluck('id');
+                \DB::table('school_custom_role_users')
+                    ->where('user_id', $user->id)
+                    ->whereIn('school_custom_role_id', $schoolCustomRoleIds)
+                    ->delete();
+                $customRole->users()->syncWithoutDetaching([$user->id]);
+            }
+        } else {
+            if (!Role::where('name', $data['role'])->exists()) {
+                return back()->withErrors(['role' => 'Invalid role.']);
+            }
+            $user->syncRoles([$data['role']]);
+        }
 
-        return redirect()->route($this->routePrefix() . 'index')->with('success', "User '{$user->name}' updated");
+        return redirect()->route($this->routePrefix() . 'index', $this->routeParams())->with('success', "User '{$user->name}' updated");
     }
 
     public function toggleStatus(User $user)
@@ -198,7 +260,8 @@ class UserController extends Controller
         $user->load('roles');
         $layout      = $this->resolveLayout();
         $routePrefix = $this->routePrefix();
-        return view('admin.users.show', compact('user', 'layout', 'routePrefix'));
+        $routeParams = $this->routeParams();
+        return view('admin.users.show', compact('user', 'layout', 'routePrefix', 'routeParams'));
     }
 
     public function destroy(User $user)
@@ -210,7 +273,7 @@ class UserController extends Controller
         }
         $name = $user->name;
         $user->delete();
-        return redirect()->route($this->routePrefix() . 'index')->with('success', "User '{$name}' deleted");
+        return redirect()->route($this->routePrefix() . 'index', $this->routeParams())->with('success', "User '{$name}' deleted");
     }
 
     /** Abort if principal tries to access user from another school */
@@ -245,8 +308,19 @@ class UserController extends Controller
     {
         $roles = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r));
         return ($roles->contains('principal') && !$roles->contains('admin'))
-            ? 'admin.school.users.'
+            ? 'school.users.'
             : 'admin.users.';
+    }
+
+    /** Route params needed alongside the prefix (school slug for principal) */
+    private function routeParams(array $extra = []): array
+    {
+        $roles = auth()->user()->getRoleNames()->map(fn($r) => strtolower($r));
+        if ($roles->contains('principal') && !$roles->contains('admin')) {
+            $slug = auth()->user()->school?->slug ?? '';
+            return array_merge([$slug], $extra);
+        }
+        return $extra;
     }
 
     private function getLoginUrl(string $role): string

@@ -98,7 +98,7 @@
                 </div>
 
                 {{-- Assign User --}}
-                <form method="POST"
+                <!-- <form method="POST"
                       action="{{ route('school.custom-roles.assign-user', [$school->slug, $role]) }}"
                       class="d-flex gap-2 mt-2">
                     @csrf
@@ -111,7 +111,7 @@
                     <button type="submit" class="btn btn-sm btn-outline-primary">
                         <i class="bi bi-person-plus"></i> Assign
                     </button>
-                </form>
+                </form> -->
 
                 {{-- Assigned Users --}}
                 @if($role->users->count())

@@ -4,14 +4,14 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h5 class="mb-0 fw-bold"><i class="bi bi-pencil me-2"></i>Edit User: {{ $user->name }}</h5>
-    <a href="{{ route($routePrefix . 'index') }}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ route($routePrefix . 'index', $routeParams ?? []) }}" class="btn btn-sm btn-outline-secondary">
         <i class="bi bi-arrow-left me-1"></i>Back
     </a>
 </div>
 
 <div class="card border-0 shadow-sm" style="max-width:650px">
     <div class="card-body p-4">
-        <form method="POST" action="{{ route($routePrefix . 'update', $user) }}">
+        <form method="POST" action="{{ route($routePrefix . 'update', array_merge($routeParams ?? [], [$user])) }}">
             @csrf @method('PUT')
             <div class="row g-3">
                 <div class="col-md-6">
@@ -38,9 +38,12 @@
                     <select name="role" class="form-select form-select-sm @error('role') is-invalid @enderror" required>
                         <option value="">-- Select Role --</option>
                         @foreach($roles as $role)
-                            <option value="{{ $role->name }}"
-                                {{ (old('role', $userRole) === $role->name) ? 'selected' : '' }}>
-                                {{ ucfirst($role->name) }}
+                            @php
+                                $val = ($role->custom ?? false) ? 'custom:' . $role->id : $role->name;
+                            @endphp
+                            <option value="{{ $val }}"
+                                {{ (old('role', $userRole) === $val || old('role', $userRole) === $role->name) ? 'selected' : '' }}>
+                                {{ $role->label ?? ucfirst($role->name) }}
                             </option>
                         @endforeach
                     </select>
@@ -101,7 +104,7 @@
                 <button type="submit" class="btn btn-primary btn-sm">
                     <i class="bi bi-check-lg me-1"></i>Update User
                 </button>
-                <a href="{{ route($routePrefix . 'index') }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                <a href="{{ route($routePrefix . 'index', $routeParams ?? []) }}" class="btn btn-outline-secondary btn-sm">Cancel</a>
             </div>
         </form>
     </div>
@@ -130,7 +133,7 @@
                 <p class="small text-muted mb-3">This cannot be undone.</p>
                 <div class="d-flex gap-2 justify-content-center">
                     <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <form method="POST" action="{{ route($routePrefix . 'destroy', $user) }}">
+                    <form method="POST" action="{{ route($routePrefix . 'destroy', array_merge($routeParams ?? [], [$user])) }}">
                         @csrf @method('DELETE')
                         <button class="btn btn-sm btn-danger">Delete</button>
                     </form>

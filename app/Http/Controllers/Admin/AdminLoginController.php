@@ -48,6 +48,11 @@ class AdminLoginController extends Controller
         // Flush permission cache so sidebar shows correctly
         app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
 
+        // Principal goes to their school dashboard
+        if ($roles->contains('principal') && !$roles->contains('admin') && $user->school) {
+            return redirect()->route('school.dashboard', $user->school->slug);
+        }
+
         return redirect()->route('admin.dashboard');
     }
 

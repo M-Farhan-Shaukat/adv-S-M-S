@@ -70,4 +70,11 @@ class ClassController extends Controller
         $section->delete();
         return redirect()->back()->with('success', 'Section deleted');
     }
+
+    public function updateSection(Request $request, string $school, Section $section)
+    {
+        $data = $request->validate(['name' => 'required|string|max:50']);
+        $section->update($data);
+        return redirect()->back()->with('success', 'Section updated.');
+    }
 }

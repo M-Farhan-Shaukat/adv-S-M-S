@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\School\AttendanceController;
 use App\Http\Controllers\School\ClassController;
 use App\Http\Controllers\School\ComplaintController;
@@ -23,6 +24,18 @@ Route::prefix('{school}')
     ->name('school.')
     ->group(function () {
 
+        // =================== SCHOOL USERS (principal manages) ===================
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/',                [UserController::class, 'index'])->name('index');
+            Route::get('/create',          [UserController::class, 'create'])->name('create');
+            Route::post('/',               [UserController::class, 'store'])->name('store');
+            Route::get('/{user}/edit',     [UserController::class, 'edit'])->name('edit');
+            Route::put('/{user}',          [UserController::class, 'update'])->name('update');
+            Route::get('/{user}',          [UserController::class, 'show'])->name('show');
+            Route::patch('/{user}/status', [UserController::class, 'toggleStatus'])->name('status');
+            Route::delete('/{user}',       [UserController::class, 'destroy'])->name('destroy');
+        });
+
         // =================== CUSTOM ROLES ===================
         Route::prefix('custom-roles')->name('custom-roles.')->group(function () {
             Route::get('/',                                        [CustomRoleController::class, 'index'])->name('index');
@@ -39,11 +52,12 @@ Route::prefix('{school}')
 
         // =================== SESSIONS ===================
         Route::prefix('sessions')->name('sessions.')->group(function () {
-            Route::get('/',               [SessionController::class, 'index'])->name('index');
-            Route::post('/',              [SessionController::class, 'store'])->name('store');
-            Route::get('/{session}/edit', [SessionController::class, 'edit'])->name('edit');
-            Route::put('/{session}',      [SessionController::class, 'update'])->name('update');
-            Route::delete('/{session}',   [SessionController::class, 'destroy'])->name('destroy');
+            Route::get('/',                    [SessionController::class, 'index'])->name('index');
+            Route::post('/',                   [SessionController::class, 'store'])->name('store');
+            Route::get('/{session}/edit',      [SessionController::class, 'edit'])->name('edit');
+            Route::put('/{session}',           [SessionController::class, 'update'])->name('update');
+            Route::patch('/{session}/toggle',  [SessionController::class, 'toggleStatus'])->name('toggle');
+            Route::delete('/{session}',        [SessionController::class, 'destroy'])->name('destroy');
         });
 
         // =================== CLASSES & SECTIONS ===================
@@ -54,6 +68,7 @@ Route::prefix('{school}')
             Route::delete('/{class}', [ClassController::class, 'destroy'])->name('destroy');
             Route::get('/{class}/sections', [ClassController::class, 'sections'])->name('sections');
             Route::post('/{class}/sections', [ClassController::class, 'storeSection'])->name('sections.store');
+            Route::patch('/sections/{section}', [ClassController::class, 'updateSection'])->name('sections.update');
             Route::delete('/sections/{section}', [ClassController::class, 'destroySection'])->name('sections.destroy');
         });
 

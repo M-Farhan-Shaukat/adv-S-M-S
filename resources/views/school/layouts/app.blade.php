@@ -129,15 +129,15 @@
         @endphp
 
         <ul class="nav flex-column">
-            <li><a href="{{ $isPrincipal ? route('admin.dashboard') : route('school.dashboard', $slug) }}"
-                   class="nav-link {{ request()->routeIs('admin.dashboard') || request()->routeIs('school.dashboard') ? 'active' : '' }}">
+            <li><a href="{{ $isPrincipal ? route('school.dashboard', $slug) : route('school.dashboard', $slug) }}"
+                   class="nav-link {{ request()->routeIs('school.dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i> Dashboard
             </a></li>
 
             @if($isPrincipal)
             {{-- ===== PRINCIPAL: full menu, no @can needed ===== --}}
-            <li><a href="{{ route('admin.school.users.index') }}"
-                   class="nav-link {{ request()->routeIs('admin.school.users.*') ? 'active' : '' }}">
+            <li><a href="{{ route('school.users.index', $slug) }}"
+                   class="nav-link {{ request()->routeIs('school.users.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i> School Users
             </a></li>
             <li><a href="{{ route('school.custom-roles.index', $slug) }}"
@@ -151,6 +151,7 @@
             <li><a href="{{ route('school.sessions.index', $slug) }}" class="nav-link {{ request()->routeIs('school.sessions.*') ? 'active' : '' }}"><i class="bi bi-calendar3"></i> Sessions</a></li>
             <li><a href="{{ route('school.classes.index', $slug) }}" class="nav-link {{ request()->routeIs('school.classes.*') ? 'active' : '' }}"><i class="bi bi-building"></i> Classes</a></li>
             <li><a href="{{ route('school.subjects.index', $slug) }}" class="nav-link {{ request()->routeIs('school.subjects.*') ? 'active' : '' }}"><i class="bi bi-book"></i> Subjects</a></li>
+            <li><a href="{{ route('school.subjects.assignments', $slug) }}" class="nav-link {{ request()->routeIs('school.subjects.assignments') ? 'active' : '' }}"><i class="bi bi-person-check"></i> Teacher Assignments</a></li>
 
             <div class="sidebar-section">Attendance</div>
             <li><a href="{{ route('school.attendance.teachers', $slug) }}" class="nav-link {{ request()->routeIs('school.attendance.teachers*') ? 'active' : '' }}"><i class="bi bi-calendar-check"></i> Teacher Attendance</a></li>
@@ -200,6 +201,7 @@
             <li><a href="{{ route('school.sessions.index', $slug) }}" class="nav-link {{ request()->routeIs('school.sessions.*') ? 'active' : '' }}"><i class="bi bi-calendar3"></i> Sessions</a></li>
             <li><a href="{{ route('school.classes.index', $slug) }}" class="nav-link {{ request()->routeIs('school.classes.*') ? 'active' : '' }}"><i class="bi bi-building"></i> Classes</a></li>
             <li><a href="{{ route('school.subjects.index', $slug) }}" class="nav-link {{ request()->routeIs('school.subjects.*') ? 'active' : '' }}"><i class="bi bi-book"></i> Subjects</a></li>
+            <li><a href="{{ route('school.subjects.assignments', $slug) }}" class="nav-link {{ request()->routeIs('school.subjects.assignments') ? 'active' : '' }}"><i class="bi bi-person-check"></i> Teacher Assignments</a></li>
             @endcan
 
             @canany(['mark teacher attendance', 'mark student attendance'])
@@ -264,7 +266,7 @@
         </ul>
 
         <div class="mt-4 pt-3 border-top border-white border-opacity-25">
-            <form method="POST" action="{{ $isPrincipal ? route('admin.logout') : route('logout') }}">
+            <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button class="btn btn-sm w-100 text-white border-white border-opacity-25" style="background:rgba(255,255,255,0.1)">
                     <i class="bi bi-box-arrow-right me-1"></i> Logout

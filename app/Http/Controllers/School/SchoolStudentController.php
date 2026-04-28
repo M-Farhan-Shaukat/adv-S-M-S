@@ -17,16 +17,25 @@ class SchoolStudentController extends Controller
 {
     public function index(Request $request)
     {
-        $school   = app('school');
-        $students = Student::with('currentEnrollment.class', 'currentEnrollment.section')
-            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"))
-            ->when($request->class_id, fn($q) => $q->whereHas('currentEnrollment',
-                fn($e) => $e->where('school_class_id', $request->class_id)))
-            ->when($request->status !== null && $request->status !== '',
-                fn($q) => $q->where('is_active', $request->status === 'active'))
-            ->paginate(20);
+        $school  = app('school');
+        $classes = SchoolClass::with('sections')->get();
 
-        $classes = SchoolClass::all();
+        // Group students by class
+        $classId = $request->class_id;
+        $search  = $request->search;
+        $status  = $request->status;
+
+        $students = Student::with('currentEnrollment.class', 'currentEnrollment.section')
+            ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%")
+                ->orWhere('roll_number', 'like', "%{$search}%"))
+            ->when($classId, fn($q) => $q->whereHas('currentEnrollment',
+                fn($e) => $e->where('school_class_id', $classId)))
+            ->when($status !== null && $status !== '',
+                fn($q) => $q->where('is_active', $status === 'active'))
+            ->orderBy('name')
+            ->paginate(30)
+            ->appends($request->only(['search', 'class_id', 'status']));
+
         return view('school.students.index', compact('students', 'classes', 'school'));
     }
 
@@ -177,24 +186,52 @@ class SchoolStudentController extends Controller
         $school   = app('school');
         $classes  = SchoolClass::with('sections')->get();
         $sessions = SchoolSession::all();
-        return view('school.students.edit', compact('student', 'classes', 'sessions', 'school'));
+        $enrollment = $student->currentEnrollment;
+        return view('school.students.edit', compact('student', 'classes', 'sessions', 'school', 'enrollment'));
     }
 
     public function update(Request $request, string $school, Student $student)
     {
         $data = $request->validate([
-            'name'           => 'required|string',
-            'phone'          => 'nullable|string',
-            'dob'            => 'nullable|date',
-            'gender'         => 'nullable|in:male,female,other',
-            'address'        => 'nullable|string',
-            'guardian_name'  => 'nullable|string',
-            'guardian_phone' => 'nullable|string',
+            'name'              => 'required|string|max:100',
+            'phone'             => 'nullable|string',
+            'dob'               => 'nullable|date',
+            'gender'            => 'nullable|in:male,female,other',
+            'address'           => 'nullable|string',
+            'guardian_name'     => 'nullable|string',
+            'guardian_phone'    => 'nullable|string',
+            'is_active'         => 'nullable|boolean',
+            // Enrollment change
+            'school_session_id' => 'nullable|exists:school_sessions,id',
+            'school_class_id'   => 'nullable|exists:school_classes,id',
+            'section_id'        => 'nullable|exists:sections,id',
         ]);
 
-        $student->update($data);
+        $student->update([
+            'name'           => $data['name'],
+            'phone'          => $data['phone'] ?? null,
+            'dob'            => $data['dob'] ?? null,
+            'gender'         => $data['gender'] ?? null,
+            'address'        => $data['address'] ?? null,
+            'guardian_name'  => $data['guardian_name'] ?? null,
+            'guardian_phone' => $data['guardian_phone'] ?? null,
+            'is_active'      => $request->boolean('is_active'),
+        ]);
+
+        // Update enrollment if class/section changed
+        if (!empty($data['school_class_id']) && !empty($data['section_id'])) {
+            $enrollment = $student->currentEnrollment;
+            if ($enrollment) {
+                $enrollment->update([
+                    'school_class_id'   => $data['school_class_id'],
+                    'section_id'        => $data['section_id'],
+                    'school_session_id' => $data['school_session_id'] ?? $enrollment->school_session_id,
+                ]);
+            }
+        }
+
         return redirect()->route('school.students.index', app('school')->slug)
-            ->with('success', 'Student updated');
+            ->with('success', 'Student updated successfully.');
     }
 
     public function destroy(string $school, Student $student)

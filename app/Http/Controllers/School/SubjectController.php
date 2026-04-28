@@ -81,15 +81,23 @@ class SubjectController extends Controller
     }
 
     // Assignments
-    public function assignments()
+    public function assignments(Request $request)
     {
-        $school      = app('school');
-        $assignments = SubjectAssignment::with('subject', 'teacher', 'schoolClass', 'section')->paginate(20);
-        $subjects    = Subject::with('schoolClass')->get();
-        $teachers    = Teacher::where('is_active', true)->get();
-        $classes     = SchoolClass::with('sections')->get();
-        $session     = $school->activeSession ?? $school->currentSession;
-        return view('school.subjects.assignments', compact('assignments', 'subjects', 'teachers', 'classes', 'session', 'school'));
+        $school   = app('school');
+        $classes  = SchoolClass::with('sections')->get();
+        $teachers = Teacher::where('is_active', true)->get();
+        $session  = $school->activeSession ?? $school->currentSession;
+
+        $classId     = $request->class_id;
+        $assignments = SubjectAssignment::with('subject', 'teacher', 'schoolClass', 'section')
+            ->when($classId, fn($q) => $q->where('school_class_id', $classId))
+            ->latest()
+            ->paginate(20)
+            ->appends($request->only('class_id'));
+
+        return view('school.subjects.assignments', compact(
+            'assignments', 'teachers', 'classes', 'session', 'school', 'classId'
+        ));
     }
 
     public function assign(Request $request)

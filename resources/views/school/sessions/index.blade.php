@@ -90,6 +90,15 @@
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <form method="POST"
+                                              action="{{ route('school.sessions.toggle', [$school->slug, $session]) }}">
+                                            @csrf @method('PATCH')
+                                            <button class="btn btn-xs btn-outline-{{ $session->status === 'active' ? 'danger' : 'success' }}"
+                                                    title="{{ $session->status === 'active' ? 'Deactivate' : 'Activate' }}">
+                                                <i class="bi bi-{{ $session->status === 'active' ? 'x-circle' : 'check-circle' }}"></i>
+                                                {{ $session->status === 'active' ? 'Deactivate' : 'Activate' }}
+                                            </button>
+                                        </form>
+                                        <form method="POST"
                                               action="{{ route('school.sessions.destroy', [$school->slug, $session]) }}"
                                               onsubmit="return confirm('Delete this session?')">
                                             @csrf @method('DELETE')
